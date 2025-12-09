@@ -33,4 +33,337 @@
     position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;overflow:hidden;display:flex;align-items:center;justify-content:center;
     box-shadow:0 14px 40px rgba(0,0,0,0.6);
   }
-  .card-back{background:#0b1524 url
+  .card-back{background:#0b1524 url('cards/back.jpg') center/cover no-repeat;}
+  .card-face{background:#fff;}
+  .card-face img{width:100%;height:100%;object-fit:cover;display:block}
+  .hud{position:absolute;left:10px;bottom:10px;color:var(--muted);font-size:13px;background:rgba(0,0,0,0.3);padding:6px 8px;border-radius:8px}
+  .slots{display:flex;flex-wrap:wrap;gap:10px;max-width:820px}
+  .slot{width:120px;height:170px;border-radius:8px;background:linear-gradient(180deg,#041018,#071823);display:flex;align-items:center;justify-content:center;position:relative;border:1px solid rgba(255,255,255,0.03)}
+  .slot .inner{width:110px;height:160px;border-radius:6px;position:relative;perspective:900px}
+  .slot .card-inner{transition: transform .7s cubic-bezier(.2,.9,.2,1)}
+  .slot img{width:100%;height:100%;object-fit:cover;display:block;backface-visibility:hidden}
+  .index-badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,0.6);padding:4px 6px;border-radius:6px;font-size:12px}
+  .muted{color:var(--muted)}
+  .center{display:flex;align-items:center;justify-content:center}
+  @keyframes shake { 0%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} 100%{transform:translateX(0)} }
+  .shuffling { animation: shake .32s infinite linear; }
+  /* revealed state rotates to show front */
+  .revealed { transform: rotateY(0deg) !important; }
+  .faceDown { transform: rotateY(180deg); } /* shows back */
+  .small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <header>
+    <h1>タロット — 裏向きシャッフル & 一枚ずつめくる</h1>
+    <div class="small">シャッフル/選択中は裏向き表示。全カード配置後、自動で左→右に1枚ずつ表へ。</div>
+  </header>
+
+  <div class="controls">
+    <label>引く枚数：
+      <input id="numToDraw" type="number" min="1" max="20" value="3" />
+    </label>
+    <button id="startSession">デッキ準備</button>
+    <button id="startShuffle" class="secondary" disabled>シャッフル開始</button>
+    <button id="stopAndDraw" disabled>STOP → 引く</button>
+    <div id="remainingBadge" class="small">残り: 156</div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div id="shuffleArea" class="shuffle-area" title="シャッフル中は裏面が見えます">
+        <div class="card-frame">
+          <div id="liveCard" class="card-inner faceDown">
+            <div class="card-back card-face"></div>
+            <div class="card-face"><img id="liveFaceImg" src="" alt="face"></div>
+          </div>
+        </div>
+        <div class="hud" id="hud">準備してください</div>
+      </div>
+      <div class="small" style="margin-top:8px">シャッフル中/選択中はカードの背面（<code>cards/back.jpg</code>）を表示します。</div>
+    </div>
+
+    <div style="flex:1;min-width:360px">
+      <div class="small">ドロー位置（左→右に並びます）</div>
+      <div id="slots" class="slots" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+<script>
+/* ======= 設定 ======= */
+const CARD_COUNT = 78;
+const DEFAULT_SHUFFLE_SPEED = 70;
+const FAST_SHUFFLE_SPEED = 28;
+const REVEAL_DELAY = 700; // 1枚ずつめくる間隔（ms）
+/* ======= 状態 ======= */
+let deck = [];
+let drawn = [];
+let desiredDraw = 3;
+let shuffleTimer = null;
+let shuffleSpeed = DEFAULT_SHUFFLE_SPEED;
+let liveIdx = 0;
+let isShuffling = false;
+
+/* ======= 要素 ======= */
+const liveCard = document.getElementById('liveCard');
+const liveFaceImg = document.getElementById('liveFaceImg');
+const hud = document.getElementById('hud');
+const startSessionBtn = document.getElementById('startSession');
+const startShuffleBtn = document.getElementById('startShuffle');
+const stopAndDrawBtn = document.getElementById('stopAndDraw');
+const slotsEl = document.getElementById('slots');
+const numToDrawEl = document.getElementById('numToDraw');
+const remainingBadge = document.getElementById('remainingBadge');
+const shuffleArea = document.getElementById('shuffleArea');
+
+/* ======= サウンド（任意） ======= */
+const sounds = {
+  shuffleLoop: 'sounds/shuffle_loop.mp3',
+  drawPop: 'sounds/draw_pop.mp3',
+  flip: 'sounds/flip.wav',
+  click: 'sounds/select_click.mp3'
+};
+let audio = {};
+function initAudio(){
+  for (const k in sounds){
+    try {
+      audio[k] = new Audio(sounds[k]);
+      if (k === 'shuffleLoop') audio[k].loop = true;
+      audio[k].preload = 'auto';
+    } catch(e){
+      console.warn('audio load failed', k, e);
+    }
+  }
+}
+function play(k){
+  if (!audio[k]) return;
+  try {
+    if (k === 'shuffleLoop') {
+      if (audio[k].paused) audio[k].play().catch(()=>{});
+    } else {
+      const c = audio[k].cloneNode(true);
+      c.play().catch(()=>{});
+    }
+  } catch(e){}
+}
+function stop(k){
+  if (!audio[k]) return;
+  try { audio[k].pause(); audio[k].currentTime = 0; } catch(e){}
+}
+
+/* ======= ランダム（crypto） ======= */
+function cryptoShuffle(arr){
+  for (let i = arr.length - 1; i > 0; i--){
+    const r = crypto.getRandomValues(new Uint32Array(1))[0];
+    const j = r % (i+1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* ======= デッキ構築 ======= */
+function buildDeck(){
+  deck = [];
+  for (let id = 0; id < CARD_COUNT; id++){
+    deck.push({id, orientation:'upright'});
+    deck.push({id, orientation:'reversed'});
+  }
+  cryptoShuffle(deck);
+  drawn = [];
+  desiredDraw = parseInt(numToDrawEl.value) || 1;
+  shuffleSpeed = DEFAULT_SHUFFLE_SPEED;
+  updateUI();
+  renderSlots();
+  hud.textContent = 'デッキ準備完了';
+}
+
+/* ======= UI 更新 ======= */
+function updateUI(){
+  remainingBadge.textContent = `残り: ${deck.length}`;
+  startShuffleBtn.disabled = deck.length === 0 || drawn.length >= desiredDraw;
+}
+
+/* ======= スロット描画（最初は裏向き） ======= */
+function renderSlots(){
+  slotsEl.innerHTML = '';
+  const target = Math.max(desiredDraw, drawn.length);
+  for (let i=0;i<target;i++){
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    const inner = document.createElement('div');
+    inner.className = 'inner';
+    const cardInner = document.createElement('div');
+    cardInner.className = 'card-inner faceDown'; // 初期は裏向き（show back）
+    // BACK side
+    const back = document.createElement('div');
+    back.className = 'card-back card-face';
+    back.style.background = "url('cards/back.jpg') center/cover no-repeat";
+    // FRONT
+    const front = document.createElement('div');
+    front.className = 'card-face';
+    const img = document.createElement('img');
+    img.src = '';
+    front.appendChild(img);
+    cardInner.appendChild(back);
+    cardInner.appendChild(front);
+    inner.appendChild(cardInner);
+    slot.appendChild(inner);
+
+    const badge = document.createElement('div');
+    badge.className = 'index-badge';
+    badge.textContent = (i+1);
+    slot.appendChild(badge);
+
+    slotsEl.appendChild(slot);
+  }
+}
+
+/* ======= シャッフル表示（裏面） ======= */
+function startShuffle(){
+  if (deck.length === 0) { alert('まず「デッキ準備」を押してください'); return; }
+  if (drawn.length >= desiredDraw) { alert('既に指定枚数を引いています'); return; }
+  isShuffling = true;
+  play('shuffleLoop');
+  startShuffleBtn.disabled = true;
+  stopAndDrawBtn.disabled = false;
+  hud.textContent = 'シャッフル中…（クリック/STOPで引く）';
+  // show live card as BACK while shuffling (face image preloaded but hidden)
+  liveFaceImg.src = '';
+  liveCard.classList.add('faceDown');
+  shuffleArea.classList.add('shuffling');
+
+  // rotate through deck quickly (but always show back)
+  liveIdx = Math.floor(Math.random() * deck.length);
+  shuffleTimer = setInterval(()=>{
+    liveIdx = (liveIdx + 1) % deck.length;
+    // keep showing back; but preload corresponding face for later use
+    const sample = deck[liveIdx];
+    const facePath = `cards/${sample.id}.jpg`;
+    liveFaceImg.src = facePath;
+    // subtle tilt
+    const t = (Math.random() - 0.5)*6;
+    liveCard.style.transform = `rotateY(180deg) translateX(${t}px)`; // faceDown uses rotateY(180deg)
+  }, shuffleSpeed);
+}
+
+/* ======= STOP & 引く（裏向きのままスロットへ配置） ======= */
+function stopAndDraw(){
+  if (!isShuffling) return;
+  clearInterval(shuffleTimer); shuffleTimer = null;
+  isShuffling = false;
+  stop('shuffleLoop');
+  startShuffleBtn.disabled = false;
+  stopAndDrawBtn.disabled = true;
+  shuffleArea.classList.remove('shuffling');
+  liveCard.style.transform = 'rotateY(180deg)'; // ensure back
+
+  const picked = deck[liveIdx];
+  if (!picked) { hud.textContent = 'カードが見つかりません'; return; }
+
+  // play click/pop
+  play('click');
+  setTimeout(()=>play('drawPop'), 80);
+
+  // push into drawn
+  drawn.push({...picked}); // copy
+
+  // remove both same id entries from deck (picked + its pair)
+  deck = deck.filter(c => c.id !== picked.id);
+
+  updateUI();
+  // place as face-down into next available slot (we already rendered slots with img placeholders)
+  const slotIndex = drawn.length - 1;
+  const slot = slotsEl.children[slotIndex];
+  if (slot) {
+    const cardInner = slot.querySelector('.card-inner');
+    // update front image src so reveal will show it
+    const frontImg = cardInner.querySelector('.card-face img');
+    frontImg.src = `cards/${picked.id}.jpg`;
+    // if orientation is reversed, we'll mark data attribute to rotate when revealing
+    if (picked.orientation === 'reversed') {
+      cardInner.dataset.rev = 'true';
+    } else {
+      delete cardInner.dataset.rev;
+    }
+    // keep it faceDown (back visible) for now
+    cardInner.classList.add('faceDown');
+  }
+
+  hud.textContent = `引いた ${drawn.length} 枚 / 残り ${deck.length}`;
+
+  // IF finished drawing desired amount, trigger auto reveal sequence
+  if (drawn.length >= desiredDraw || deck.length === 0) {
+    startShuffleBtn.disabled = true;
+    stopAndDrawBtn.disabled = true;
+    hud.textContent = '配置完了 — これから一枚ずつ表にめくります';
+    // slight delay before reveal for UX
+    setTimeout(()=>revealSequentially(), 600);
+  }
+}
+
+/* ======= 1枚ずつ表へめくる ======= */
+async function revealSequentially(){
+  // iterate over drawn slots left->right
+  for (let i=0;i<drawn.length;i++){
+    const slot = slotsEl.children[i];
+    if (!slot) continue;
+    const cardInner = slot.querySelector('.card-inner');
+    // play flip sound
+    play('flip');
+    // apply transform to show front: rotateY(0)
+    cardInner.classList.remove('faceDown');
+    cardInner.classList.add('revealed');
+    // if reversed, rotate front image 180deg so it appears upside-down
+    const frontImg = cardInner.querySelector('.card-face img');
+    if (cardInner.dataset.rev === 'true') {
+      frontImg.style.transform = 'rotate(180deg)';
+    } else {
+      frontImg.style.transform = 'rotate(0deg)';
+    }
+    await new Promise(r => setTimeout(r, REVEAL_DELAY));
+  }
+  hud.textContent = '全て表になりました';
+}
+
+/* ======= イベントバインド ======= */
+numToDrawEl.addEventListener('change', ()=>{
+  desiredDraw = parseInt(numToDrawEl.value) || 1;
+  renderSlots();
+});
+startSessionBtn.addEventListener('click', ()=>{
+  desiredDraw = parseInt(numToDrawEl.value) || 1;
+  buildDeck();
+  startShuffleBtn.disabled = false;
+  stopAndDrawBtn.disabled = true;
+});
+startShuffleBtn.addEventListener('click', ()=>{
+  startShuffle();
+});
+stopAndDrawBtn.addEventListener('click', ()=>{
+  stopAndDraw();
+});
+shuffleArea.addEventListener('click', ()=>{
+  // click on area toggles: if shuffling -> STOP, if not shuffling and allowed -> start shuffle
+  if (isShuffling) {
+    stopAndDraw();
+  } else {
+    if (!startShuffleBtn.disabled) startShuffle();
+  }
+});
+
+/* ======= 初期化 ======= */
+initAudio();
+buildDeck();
+renderSlots();
+updateUI();
+
+/* ======= 注意 =======
+ - 必要ファイル:
+   - cards/0.jpg … cards/77.jpg（表面）
+   - cards/back.jpg（背面イメージ）
+   - sounds/*.mp3, *.wav（任意）
+ - 自動再生ポリシーで音はユーザー操作後に再生される場合があります（クリック等で解除してください）。
+*/
+</script>
+</body>
+</html>
+

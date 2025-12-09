@@ -84,4 +84,431 @@ h1{margin:0;font-size:18px}
 }
 
 /* small UI niceties */
-.badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:13px
+.badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Tarot — 3D シャッフル & レイアウト</h1>
+    <div class="small">3Dアニメ・スマホUI・ケルト十字自動配置</div>
+  </div>
+
+  <div class="controls">
+    <label>枚数 <input id="numToDraw" type="number" min="1" max="12" value="3" style="width:68px"></label>
+    <button id="prepareBtn" class="btn-primary">デッキ準備</button>
+    <button id="startBtn" disabled>シャッフル開始</button>
+    <button id="stopBtn" disabled>STOP</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="speedBtn">高速切替</button>
+      <select id="layoutSelect">
+        <option value="one">ワンカード</option>
+        <option value="three" selected>3カード</option>
+        <option value="celtic">ケルト十字</option>
+      </select>
+      <div class="badge" id="remainingBadge">残り: 156</div>
+    </div>
+  </div>
+
+  <div class="main" style="margin-top:12px">
+    <div class="left">
+      <div class="shuffle-stage" id="shuffleStage" role="region" aria-label="シャッフル表示">
+        <div class="stack" id="stack"></div>
+      </div>
+      <div class="hud small" id="hud">待機中</div>
+      <div class="controls-row">
+        <label class="small">音量
+          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.75" style="vertical-align:middle">
+        </label>
+        <button id="mute">ミュート</button>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="layout-controls small">
+        <span>レイアウト: </span>
+        <button data-layout="one" class="layoutBtn">ワン</button>
+        <button data-layout="three" class="layoutBtn">3枚</button>
+        <button data-layout="celtic" class="layoutBtn">ケルト十字</button>
+      </div>
+
+      <div class="slots-area" id="slotsArea" aria-live="polite">
+        <!-- slots will be absolutely positioned here -->
+      </div>
+    </div>
+  </div>
+
+<!-- SCRIPT -->
+<script>
+/* ======= 設定 ======= */
+const CARD_COUNT = 78;
+let deck = []; // remaining
+let drawn = []; // drawn cards
+let desired = 3;
+let shuffleTimer = null;
+let shuffleSpeed = 60; // ms; will change when fast
+let isFast = false;
+
+/* elements */
+const prepareBtn = document.getElementById('prepareBtn');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const stackEl = document.getElementById('stack');
+const shuffleStage = document.getElementById('shuffleStage');
+const hud = document.getElementById('hud');
+const numToDrawEl = document.getElementById('numToDraw');
+const remainingBadge = document.getElementById('remainingBadge');
+const slotsArea = document.getElementById('slotsArea');
+const layoutSelect = document.getElementById('layoutSelect');
+const layoutBtns = document.querySelectorAll('.layoutBtn');
+const speedBtn = document.getElementById('speedBtn');
+const volumeEl = document.getElementById('volume');
+const muteBtn = document.getElementById('mute');
+
+const audioFiles = {
+  shuffleLoop: 'sounds/shuffle_loop.mp3',
+  drawPop: 'sounds/draw_pop.mp3',
+  click: 'sounds/select_click.mp3'
+};
+let audio = {shuffleLoop:null, drawPop:null, click:null};
+let audioEnabled = true;
+
+/* ======= Audio helpers (graceful) ======= */
+function loadAudio(){
+  try {
+    audio.shuffleLoop = new Audio(audioFiles.shuffleLoop); audio.shuffleLoop.loop = true; audio.shuffleLoop.preload='auto';
+    audio.drawPop = new Audio(audioFiles.drawPop); audio.drawPop.preload='auto';
+    audio.click = new Audio(audioFiles.click); audio.click.preload='auto';
+    setVolume(volumeEl.value);
+  } catch(e){ console.warn('audio load fail', e); }
+}
+function setVolume(v){
+  if (audio.shuffleLoop) audio.shuffleLoop.volume = v;
+  if (audio.drawPop) audio.drawPop.volume = v;
+  if (audio.click) audio.click.volume = Math.min(1, v*0.95);
+}
+function play(key){
+  if (!audioEnabled) return;
+  const a = audio[key];
+  if (!a) return;
+  if (key === 'shuffleLoop'){
+    if (a.paused) a.play().catch(()=>{});
+  } else {
+    const c = a.cloneNode();
+    c.volume = a.volume; c.play().catch(()=>{});
+  }
+}
+function stop(key){
+  const a = audio[key];
+  if (!a) return;
+  if (key === 'shuffleLoop') { a.pause(); a.currentTime = 0; }
+}
+
+/* ======= Deck build & shuffle (crypto) ======= */
+function buildDeck(){
+  deck = [];
+  for (let i=0;i<CARD_COUNT;i++){
+    deck.push({id:i, orientation:'upright'});
+    deck.push({id:i, orientation:'reversed'});
+  }
+  // Fisher-Yates with crypto
+  for (let i = deck.length - 1; i > 0; i--) {
+    const r = crypto.getRandomValues(new Uint32Array(1))[0];
+    const j = r % (i + 1);
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  drawn = [];
+  desired = parseInt(numToDrawEl.value) || 3;
+  updateUI();
+  hud.textContent = 'デッキ準備完了';
+  startBtn.disabled = false;
+  renderLayoutSlots(layoutSelect.value);
+}
+
+/* ======= UI update ======= */
+function updateUI(){
+  remainingBadge.textContent = `残り: ${deck.length}`;
+}
+
+/* ======= Render stack (visual) ======= */
+function renderStackTop(sampleCount=8){
+  stackEl.innerHTML = '';
+  // show top N cards as a fanned 3D stack
+  const show = Math.min(sampleCount, deck.length);
+  for (let i=0;i<show;i++){
+    const c = deck[i];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.zIndex = (100 - i);
+    // slight translation/rotation for fanned look
+    const tx = (i - show/2) * 6;
+    const ty = -i * 4;
+    const rz = (i - show/2) * 4;
+    card.style.transform = `translateX(${tx}px) translateY(${ty}px) translateZ(${i*6}px) rotateZ(${rz}deg)`;
+    const img = document.createElement('img');
+    img.src = `cards/${c.id}.jpg`;
+    if (c.orientation === 'reversed') img.style.transform = 'rotate(180deg)';
+    card.appendChild(img);
+    stackEl.appendChild(card);
+  }
+}
+
+/* ======= Shuffle animation (3D flicker) ======= */
+let liveIndex = 0;
+function startShuffle(){
+  if (!deck.length) { alert('デッキがありません。準備してください。'); return; }
+  if (drawn.length >= desired) { alert('既に指定枚数を引いています。'); return; }
+  startBtn.disabled = true; stopBtn.disabled = false;
+  hud.textContent = 'シャッフル中… タッチまたは STOP で確定';
+  play('shuffleLoop');
+  // animate stack (pulse/explode)
+  stackEl.style.animation = 'stackPulse 0.9s infinite';
+  // rapid preview change by rotating deck index
+  if (shuffleTimer) clearInterval(shuffleTimer);
+  shuffleTimer = setInterval(()=>{
+    if (!deck.length) return;
+    liveIndex = (liveIndex + (isFast ? 3 : 1)) % deck.length;
+    // show only a few top visuals to keep 3D
+    renderStackTop(8);
+    // small jitter on container
+    stackEl.style.transform = `rotateY(${Math.sin(Date.now()/120)*6}deg)`;
+  }, shuffleSpeed);
+}
+function stopShuffleAndDraw(){
+  if (!shuffleTimer) return;
+  clearInterval(shuffleTimer); shuffleTimer=null;
+  stackEl.style.animation = '';
+  stop('shuffleLoop');
+  stopBtn.disabled = true; startBtn.disabled = false;
+  hud.textContent = 'カードを確定中…';
+  // pick the currently visible top card (liveIndex)
+  const picked = deck[liveIndex % deck.length];
+  if (!picked) { hud.textContent='カードが見つかりません'; return; }
+  // play sounds
+  play('click'); setTimeout(()=>play('drawPop'), 80);
+  // push drawn
+  drawn.push({...picked});
+  // remove all with same id (pair removal)
+  deck = deck.filter(c => c.id !== picked.id);
+  updateUI();
+  // animate from shuffle stage to slot
+  animateCardToSlot(picked, drawn.length-1, layoutSelect.value);
+  // check finish
+  if (drawn.length >= desired || deck.length === 0){
+    hud.textContent = '完了';
+    startBtn.disabled = true; stopBtn.disabled = true;
+  } else {
+    hud.textContent = `引いた ${drawn.length} / ${desired}`;
+  }
+}
+
+/* ======= Layout definitions (absolute positions inside slotsArea) ======= */
+function getSlotsForLayout(name){
+  const W = slotsArea.clientWidth;
+  const H = slotsArea.clientHeight;
+  // We'll compute positions relative to center
+  const cx = W/2, cy = H/2;
+  if (name === 'one'){
+    return [{x:cx-60, y:cy-85}];
+  }
+  if (name === 'three'){
+    // left, center, right horizontal
+    return [
+      {x:cx-170, y:cy-60},
+      {x:cx-60, y:cy-60},
+      {x:cx+50, y:cy-60}
+    ];
+  }
+  if (name === 'celtic'){
+    // Celtic Cross: central cross + staff on right (standard layout)
+    // We'll place a 3x3 cross centered left and a vertical stack right
+    const positions = [];
+    // center cross (current, crossing, past, future etc.)
+    // using offsets where card size ~120x170 -> half ~60,85
+    const s = 140; // spacing
+    // main cross (center)
+    positions.push({x:cx-160, y:cy-30}); // 1: Present (center)
+    positions.push({x:cx-160, y:cy-30}); // 2: Crossing (placed rotated) -> we'll draw rotated
+    // 3: Above (goal)
+    positions.push({x:cx-160, y:cy-30 - s});
+    // 4: Below (foundation)
+    positions.push({x:cx-160, y:cy-30 + s});
+    // 5: Past (left)
+    positions.push({x:cx-160 - s, y:cy-30});
+    // 6: Near future (right)
+    positions.push({x:cx-160 + s, y:cy-30});
+    // 7 - 10: staff on right as a vertical column
+    const colX = cx + 120;
+    const startY = cy - (s*1.5);
+    for (let i=0;i<4;i++){
+      positions.push({x:colX, y:startY + i*(s*0.9)});
+    }
+    return positions;
+  }
+  return [];
+}
+
+/* ======= Render slots (create/position slot elements) ======= */
+function renderLayoutSlots(name){
+  slotsArea.innerHTML = '';
+  const slots = getSlotsForLayout(name);
+  // ensure slotsArea has a min height set; we compute on the fly
+  for (let i=0;i<slots.length;i++){
+    const s = slots[i];
+    const el = document.createElement('div');
+    el.className = 'slot';
+    el.style.left = `${s.x}px`;
+    el.style.top = `${s.y}px`;
+    // index
+    const idx = document.createElement('div'); idx.className='index'; idx.textContent = (i+1);
+    const inner = document.createElement('div'); inner.className='inner';
+    inner.innerHTML = '<div class="small" style="color:var(--muted)">（未）</div>';
+    el.appendChild(inner); el.appendChild(idx);
+    // if layout is celtic and slot 2 is crossing, rotate 90deg visually for that slot style
+    if (layoutSelect.value === 'celtic' && i === 1){
+      el.dataset.crossing = 'true';
+      el.style.transform = 'rotate(90deg)';
+    }
+    slotsArea.appendChild(el);
+  }
+  // if drawn already, re-place drawn cards into slots
+  for (let i=0;i<drawn.length;i++){
+    placeCardInSlot(drawn[i], i);
+  }
+}
+
+/* ======= Animate flying card from center to target slot ======= */
+function animateCardToSlot(card, slotIndex, layoutName){
+  // create a floating element on top of everything
+  const floating = document.createElement('div');
+  floating.className = 'card card-fly';
+  floating.style.position = 'fixed';
+  floating.style.width = '140px'; floating.style.height='200px';
+  floating.style.borderRadius='10px';
+  floating.style.zIndex = 9999;
+  floating.style.left = (shuffleStage.getBoundingClientRect().left + shuffleStage.clientWidth/2 - 70) + 'px';
+  floating.style.top = (shuffleStage.getBoundingClientRect().top + shuffleStage.clientHeight/2 - 100) + 'px';
+  const img = document.createElement('img'); img.src = `cards/${card.id}.jpg`;
+  if (card.orientation === 'reversed') img.style.transform = 'rotate(180deg)';
+  floating.appendChild(img);
+  document.body.appendChild(floating);
+
+  // compute target position from slot element
+  const slots = slotsArea.querySelectorAll('.slot');
+  let targetSlot = slots[slotIndex];
+  if (!targetSlot){
+    // if no slot (e.g. drawing more than slot count) append at end
+    const el = document.createElement('div'); el.className='slot';
+    el.style.left = '12px'; el.style.top = `${12 + slotIndex*20}px`;
+    const inner = document.createElement('div'); inner.className='inner'; inner.innerHTML='';
+    el.appendChild(inner); slotsArea.appendChild(el);
+    targetSlot = el;
+  }
+  const targetRect = targetSlot.getBoundingClientRect();
+  const bodyRect = document.body.getBoundingClientRect();
+
+  // final coords (center align)
+  const finalLeft = targetRect.left + (targetRect.width/2) - 70;
+  const finalTop = targetRect.top + (targetRect.height/2) - 100;
+
+  // animate: rotate & translate in 3D
+  floating.animate([
+    { transform: 'translateZ(0px) translateX(0px) translateY(0px) rotateY(0deg) scale(1.05)', opacity:1 },
+    { transform: `translateZ(160px) translateX(${(finalLeft - parseFloat(floating.style.left)) * 0.4}px) translateY(${(finalTop - parseFloat(floating.style.top)) * 0.4}px) rotateY(120deg) scale(1.05)`, opacity:1, offset:0.4 },
+    { transform: `translateZ(0px) translateX(${finalLeft - parseFloat(floating.style.left)}px) translateY(${finalTop - parseFloat(floating.style.top)}px) rotateY(0deg) scale(1)`, opacity:1 }
+  ], { duration: 850, easing: 'cubic-bezier(.2,.9,.2,1)' });
+
+  // also slight rotation for "placement"
+  img.animate([
+    { transform: card.orientation === 'reversed' ? 'rotate(180deg)' : 'rotate(0deg)' },
+    { transform: card.orientation === 'reversed' ? 'rotate(180deg) scale(1.02)' : 'rotate(0deg) scale(1.02)' },
+    { transform: card.orientation === 'reversed' ? 'rotate(180deg)' : 'rotate(0deg)' }
+  ], { duration: 850, easing: 'ease-out' });
+
+  // after animation finishes, remove floating and set slot content
+  setTimeout(()=>{
+    document.body.removeChild(floating);
+    placeCardInSlot(card, slotIndex);
+  }, 880);
+}
+
+/* ======= Place card DOM in slot (without fly anim) ======= */
+function placeCardInSlot(card, slotIndex){
+  const slots = slotsArea.querySelectorAll('.slot');
+  const slot = slots[slotIndex];
+  if (!slot){
+    // create fallback appended slot
+    const el = document.createElement('div'); el.className='slot';
+    const inner = document.createElement('div'); inner.className='inner';
+    el.appendChild(inner);
+    slotsArea.appendChild(el);
+    inner.innerHTML = `<img src="cards/${card.id}.jpg" style="${card.orientation==='reversed' ? 'transform:rotate(180deg)' : ''}">`;
+    return;
+  }
+  const inner = slot.querySelector('.inner');
+  inner.innerHTML = ''; // clear
+  const img = document.createElement('img'); img.src = `cards/${card.id}.jpg`;
+  if (card.orientation === 'reversed') img.style.transform = 'rotate(180deg)';
+  inner.appendChild(img);
+  // add small placing class
+  inner.animate([
+    { transform: 'translateY(-20px) rotateX(30deg) scale(1.04)', opacity:0 },
+    { transform: 'translateY(0) rotateX(0) scale(1)', opacity:1 }
+  ], { duration: 600, easing: 'cubic-bezier(.2,.9,.2,1)' });
+}
+
+/* ======= Events ======= */
+prepareBtn.addEventListener('click', ()=>{
+  buildDeck();
+});
+startBtn.addEventListener('click', ()=> {
+  startShuffle();
+});
+stopBtn.addEventListener('click', ()=> {
+  stopShuffleAndDraw();
+});
+numToDrawEl.addEventListener('change', (e)=> {
+  desired = parseInt(e.target.value) || 1;
+});
+layoutSelect.addEventListener('change', (e)=> {
+  renderLayoutSlots(e.target.value);
+});
+layoutBtns.forEach(b => b.addEventListener('click', (ev)=>{
+  const name = ev.currentTarget.dataset.layout;
+  layoutSelect.value = name;
+  renderLayoutSlots(name);
+}));
+
+speedBtn.addEventListener('click', ()=>{
+  isFast = !isFast;
+  shuffleSpeed = isFast ? 24 : 60;
+  speedBtn.textContent = isFast ? '高速: ON' : '高速: OFF';
+  // if currently shuffling, restart with new speed
+  if (shuffleTimer){ clearInterval(shuffleTimer); shuffleTimer=null; startShuffle(); }
+});
+
+slotsArea.addEventListener('click', (e)=>{
+  // tap slot to show details later (placeholder)
+});
+
+volumeEl.addEventListener('input', (e)=> setVolume(e.target.value));
+muteBtn.addEventListener('click', ()=> { audioEnabled = !audioEnabled; muteBtn.textContent = audioEnabled ? 'ミュート' : 'サウンドOFF'; if (!audioEnabled) stop('shuffleLoop'); });
+
+/* allow tapping shuffleStage to stop/start */
+shuffleStage.addEventListener('click', ()=>{
+  if (shuffleTimer) stopShuffleAndDraw();
+  else if (!startBtn.disabled) startShuffle();
+});
+
+/* initialize audio + initial layout */
+loadAudio();
+renderLayoutSlots(layoutSelect.value);
+renderStackTop(8);
+updateUI();
+
+/* note: when resizing window re-render slots to recalc positions */
+window.addEventListener('resize', ()=> {
+  renderLayoutSlots(layoutSelect.value);
+});
+</script>
+</body>
+</html>

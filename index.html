@@ -1,364 +1,69 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Tarot — 裏向きシャッフル & 一枚ずつめくる</title>
+<meta charset="UTF-8">
+<title>Tarot Reader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  :root{
-    --bg:#000;
-    --panel:#06131a;
-    --muted:#9aa4b2;
-    --accent:#f6b042;
-    --card-w:120px;
-    --card-h:170px;
-  }
-  html,body{height:100%;margin:0;}
-  body{
-    background:var(--bg);
-    color:#eef2f7;
-    font-family: "Noto Sans JP","Hiragino Kaku Gothic ProN",system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    -webkit-font-smoothing:antialiased;
-    padding:20px;
-  }
-  header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  h1{margin:0;font-size:20px}
-  .small{font-size:13px;color:var(--muted)}
-  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-  input[type=number]{width:80px;padding:8px;border-radius:8px;border:0;background:#07111a;color:#fff}
-  button{padding:9px 14px;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent),#e89b27);color:#08101a;font-weight:700;cursor:pointer}
-  button.secondary{background:transparent;color:var(--muted);box-shadow:none;border:1px solid rgba(255,255,255,0.04)}
-  .panel{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
-  .left{width:260px}
-  .shuffle-area{
-    width:260px;height:360px;border-radius:14px;background:linear-gradient(180deg,#071018,#041018);display:flex;align-items:center;justify-content:center;position:relative;border:1px solid rgba(255,255,255,0.03);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  }
-  .card-frame{width:220px;height:320px;perspective:1400px;display:flex;align-items:center;justify-content:center}
-  .card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition: transform .6s cubic-bezier(.2,.9,.2,1)}
-  .card-face, .card-back{
-    position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;overflow:hidden;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 18px 44px rgba(0,0,0,0.6);
-  }
-  .card-back{ background:#0b1524 url('cards/back.jpg') center/cover no-repeat; }
-  .card-face{ background:#fff; }
-  .card-face img{width:100%;height:100%;object-fit:cover;display:block}
-  .hud{position:absolute;left:12px;bottom:12px;color:var(--muted);font-size:13px;background:rgba(0,0,0,0.32);padding:8px 10px;border-radius:10px}
-  .slots{display:flex;flex-wrap:wrap;gap:12px;max-width:960px}
-  .slot{width:var(--card-w);height:var(--card-h);border-radius:8px;background:linear-gradient(180deg,#06121a,#081a22);display:flex;align-items:center;justify-content:center;position:relative;border:1px solid rgba(255,255,255,0.03)}
-  .slot .inner{width:100%;height:100%;border-radius:6px;position:relative;perspective:900px}
-  .slot .card-inner{transition: transform .7s cubic-bezier(.2,.9,.2,1)}
-  .slot img{width:100%;height:100%;object-fit:cover;display:block;backface-visibility:hidden}
-  .index-badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,0.6);padding:4px 6px;border-radius:6px;font-size:12px}
-  .shuffling { animation: shuf 0.32s infinite linear; }
-  @keyframes shuf { 0%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} 100%{transform:translateX(0)} }
-  .faceDown{ transform: rotateY(180deg); }
-  .revealed{ transform: rotateY(0deg); }
-  .controls-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-  .volume{display:flex;gap:8px;align-items:center}
-  input[type=range]{width:120px}
-  footer{margin-top:16px;color:var(--muted);font-size:13px}
-  @media(max-width:880px){ .panel{flex-direction:column} .left{width:100%} .slots{justify-content:flex-start} }
+    body {
+        background: #111;
+        color: #fff;
+        text-align: center;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    #card {
+        width: 300px;
+        height: auto;
+        margin-top: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        transition: transform 0.5s;
+    }
+    button {
+        padding: 12px 24px;
+        font-size: 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        margin-top: 30px;
+    }
 </style>
 </head>
 <body>
-  <header>
-    <h1>タロット — 裏向きシャッフル & 一枚ずつめくる</h1>
-    <div class="small">シャッフル中/選択は背面表示。配置完了後、左→右に1枚ずつ表へ裏返します。</div>
-  </header>
 
-  <div class="controls">
-    <label class="small">引く枚数：
-      <input id="numToDraw" type="number" min="1" max="20" value="3" />
-    </label>
+<h1>Tarot Reading</h1>
 
-    <button id="startSession">デッキ準備</button>
-    <button id="startShuffle" class="secondary" disabled>シャッフル開始</button>
-    <button id="stopAndDraw" disabled>STOP → 引く</button>
+<img id="card" src="./cards/back.jpg" alt="Tarot Card">
 
-    <div class="controls-right">
-      <div class="volume small">🔊 <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="0.7" /></div>
-      <div id="remainingBadge" class="small">残り: 156</div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="left">
-      <div id="shuffleArea" class="shuffle-area" title="シャッフル中は裏面が見えます">
-        <div class="card-frame">
-          <!-- 初期は裏向き表示（faceDown） -->
-          <div id="liveCard" class="card-inner faceDown" aria-hidden="true">
-            <div class="card-back card-face"></div>
-            <div class="card-face"><img id="liveFaceImg" src="" alt="card face" /></div>
-          </div>
-        </div>
-        <div class="hud" id="hud">準備してください</div>
-      </div>
-      <div class="small" style="margin-top:8px">カード表面画像： <code>cards/0.jpg</code> … <code>cards/77.jpg</code>、背面：<code>cards/back.jpg</code></div>
-    </div>
-
-    <div style="flex:1;min-width:360px">
-      <div class="small">ドロー位置（左→右）</div>
-      <div id="slots" class="slots" style="margin-top:10px"></div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="small">※効果音は <code>sounds/</code> に置くと再生されます（任意）。自動再生制限により音は最初のユーザー操作後に有効になります。</div>
-  </footer>
+<br>
+<button onclick="drawCard()">カードを引く</button>
 
 <script>
-/* ====== 設定 ====== */
-const CARD_COUNT = 78;
-const DEFAULT_SHUFFLE_SPEED = 70;
-const FAST_SHUFFLE_SPEED = 28;
-const REVEAL_DELAY = 700; // ms
+const totalCards = 22;   // 0〜21 の22枚
 
-/* ====== 状態 ====== */
-let deck = [];
-let drawn = [];
-let desiredDraw = 3;
-let shuffleTimer = null;
-let shuffleSpeed = DEFAULT_SHUFFLE_SPEED;
-let liveIdx = 0;
-let isShuffling = false;
+function drawCard() {
+    // ランダムにカードを決定
+    const num = Math.floor(Math.random() * totalCards);
+    const img = document.getElementById("card");
 
-/* ====== 要素 ====== */
-const liveCard = document.getElementById('liveCard');
-const liveFaceImg = document.getElementById('liveFaceImg');
-const hud = document.getElementById('hud');
-const startSessionBtn = document.getElementById('startSession');
-const startShuffleBtn = document.getElementById('startShuffle');
-const stopAndDrawBtn = document.getElementById('stopAndDraw');
-const slotsEl = document.getElementById('slots');
-const numToDrawEl = document.getElementById('numToDraw');
-const remainingBadge = document.getElementById('remainingBadge');
-const volumeRange = document.getElementById('volumeRange');
-const shuffleArea = document.getElementById('shuffleArea');
+    const newPath = `./cards/${num}.jpg`;
+    console.log("Show:", newPath);
 
-/* ====== オーディオ（ベストエフォート） ====== */
-const audioFiles = {
-  shuffleLoop: 'sounds/shuffle_loop.mp3',
-  drawPop: 'sounds/draw_pop.mp3',
-  click: 'sounds/select_click.mp3',
-  flip: 'sounds/flip.wav'
-};
-const audio = {};
-function loadAudio(){
-  for (const k in audioFiles){
-    try {
-      audio[k] = new Audio(audioFiles[k]);
-      audio[k].preload = 'auto';
-      if (k === 'shuffleLoop') audio[k].loop = true;
-    } catch(e){ audio[k] = null; }
-  }
-}
-function setAudioVolume(v){
-  const vol = Number(v);
-  for (const k in audio){
-    if (!audio[k]) continue;
-    audio[k].volume = vol;
-  }
-}
-function playSound(key){
-  try {
-    const a = audio[key];
-    if (!a) return;
-    if (key === 'shuffleLoop') {
-      if (a.paused) a.play().catch(()=>{});
-    } else {
-      const c = a.cloneNode(true);
-      c.play().catch(()=>{});
-    }
-  } catch(e){}
-}
-function stopSound(key){
-  try { const a = audio[key]; if (a){ a.pause(); a.currentTime = 0; } } catch(e){}
+    // 新しいカードをセット
+    img.style.transform = "rotateY(90deg)";
+
+    setTimeout(() => {
+        img.src = newPath;
+        img.style.transform = "rotateY(0deg)";
+    }, 300);
 }
 
-/* ====== ランダム（暗号的に強いシャッフル） ====== */
-function cryptoShuffle(array){
-  for (let i = array.length - 1; i > 0; i--) {
-    const r = crypto.getRandomValues(new Uint32Array(1))[0];
-    const j = r % (i + 1);
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-/* ====== デッキ構築 ====== */
-function buildDeck(){
-  deck = [];
-  for (let id = 0; id < CARD_COUNT; id++){
-    deck.push({id, orientation:'upright'});
-    deck.push({id, orientation:'reversed'});
-  }
-  cryptoShuffle(deck);
-  drawn = [];
-  desiredDraw = parseInt(numToDrawEl.value) || 1;
-  updateUI();
-  renderSlots();
-  hud.textContent = 'デッキ準備完了';
-}
-
-/* ====== UI 更新 & スロット描画 ====== */
-function updateUI(){
-  remainingBadge.textContent = `残り: ${deck.length}`;
-  startShuffleBtn.disabled = deck.length === 0 || drawn.length >= desiredDraw;
-}
-function renderSlots(){
-  slotsEl.innerHTML = '';
-  const target = Math.max(desiredDraw, drawn.length);
-  for (let i=0;i<target;i++){
-    const slot = document.createElement('div');
-    slot.className = 'slot';
-    const inner = document.createElement('div');
-    inner.className = 'inner';
-    const cardInner = document.createElement('div');
-    cardInner.className = 'card-inner faceDown'; // 初期は裏向き
-    // back
-    const back = document.createElement('div');
-    back.className = 'card-back card-face';
-    back.style.background = "url('cards/back.jpg') center/cover no-repeat";
-    // front
-    const front = document.createElement('div');
-    front.className = 'card-face';
-    const img = document.createElement('img');
-    img.src = '';
-    front.appendChild(img);
-    cardInner.appendChild(back);
-    cardInner.appendChild(front);
-    inner.appendChild(cardInner);
-    slot.appendChild(inner);
-    const badge = document.createElement('div');
-    badge.className = 'index-badge';
-    badge.textContent = (i+1);
-    slot.appendChild(badge);
-    slotsEl.appendChild(slot);
-  }
-}
-
-/* ====== シャッフル（裏向きで表示） ====== */
-function startShuffle(){
-  if (deck.length === 0) { alert('まず「デッキ準備」を押してください。'); return; }
-  if (drawn.length >= desiredDraw) { alert('既に指定枚数を引いています。'); return; }
-  isShuffling = true;
-  playSound('shuffleLoop');
-  startShuffleBtn.disabled = true;
-  stopAndDrawBtn.disabled = false;
-  hud.textContent = 'シャッフル中…（STOPで確定）';
-  liveFaceImg.src = '';
-  liveCard.classList.add('faceDown');
-  shuffleArea.classList.add('shuffling');
-  liveIdx = Math.floor(Math.random() * deck.length);
-  shuffleTimer = setInterval(() => {
-    if (!deck.length) return;
-    liveIdx = (liveIdx + 1) % deck.length;
-    const sample = deck[liveIdx];
-    // preload face image (but keep the liveCard showing back)
-    liveFaceImg.src = `cards/${sample.id}.jpg`;
-    const t = (Math.random() - 0.5) * 6;
-    liveCard.style.transform = `rotateY(180deg) translateX(${t}px)`;
-  }, shuffleSpeed);
-}
-
-/* ====== STOP & 引く（裏向きでスロットへ配置） ====== */
-function stopAndDraw(){
-  if (!isShuffling) return;
-  clearInterval(shuffleTimer); shuffleTimer = null;
-  isShuffling = false;
-  stopSound('shuffleLoop');
-  startShuffleBtn.disabled = false;
-  stopAndDrawBtn.disabled = true;
-  shuffleArea.classList.remove('shuffling');
-  liveCard.style.transform = 'rotateY(180deg)';
-  const picked = deck[liveIdx];
-  if (!picked) {
-    hud.textContent = 'カードが見つかりません';
-    return;
-  }
-  playSound('click');
-  setTimeout(()=>playSound('drawPop'), 80);
-  drawn.push({...picked});
-  // remove both entries with same id
-  deck = deck.filter(c => c.id !== picked.id);
-  updateUI();
-  // place into next slot (faceDown)
-  const slotIndex = drawn.length - 1;
-  const slot = slotsEl.children[slotIndex];
-  if (slot) {
-    const cardInner = slot.querySelector('.card-inner');
-    const frontImg = cardInner.querySelector('.card-face img');
-    frontImg.src = `cards/${picked.id}.jpg`;
-    if (picked.orientation === 'reversed') {
-      cardInner.dataset.rev = 'true';
-    } else {
-      delete cardInner.dataset.rev;
-    }
-    cardInner.classList.add('faceDown');
-  }
-  hud.textContent = `引いた ${drawn.length} 枚 / 残り ${deck.length}`;
-  if (drawn.length >= desiredDraw || deck.length === 0) {
-    startShuffleBtn.disabled = true;
-    stopAndDrawBtn.disabled = true;
-    hud.textContent = '配置完了 — これから一枚ずつ表にめくります';
-    setTimeout(()=>revealSequentially(), 600);
-  }
-}
-
-/* ====== 一枚ずつ表へめくる ====== */
-async function revealSequentially(){
-  for (let i=0;i<drawn.length;i++){
-    const slot = slotsEl.children[i];
-    if (!slot) continue;
-    const cardInner = slot.querySelector('.card-inner');
-    playSound('flip');
-    // reveal (rotate to 0deg)
-    cardInner.classList.remove('faceDown');
-    cardInner.classList.add('revealed');
-    // apply orientation rotation for reversed
-    const frontImg = cardInner.querySelector('.card-face img');
-    if (cardInner.dataset.rev === 'true') {
-      frontImg.style.transform = 'rotate(180deg)';
-    } else {
-      frontImg.style.transform = 'rotate(0deg)';
-    }
-    await new Promise(r => setTimeout(r, REVEAL_DELAY));
-  }
-  hud.textContent = '全て表になりました';
-}
-
-/* ====== イベントバインド ====== */
-numToDrawEl.addEventListener('change', () => {
-  desiredDraw = parseInt(numToDrawEl.value) || 1;
-  renderSlots();
+// 初期ロードログ
+window.addEventListener("load", () => {
+    console.log("Loaded:", document.getElementById("card").src);
 });
-startSessionBtn.addEventListener('click', () => {
-  desiredDraw = parseInt(numToDrawEl.value) || 1;
-  buildDeck();
-  startShuffleBtn.disabled = false;
-  stopAndDrawBtn.disabled = true;
-});
-startShuffleBtn.addEventListener('click', startShuffle);
-stopAndDrawBtn.addEventListener('click', stopAndDraw);
-shuffleArea.addEventListener('click', () => {
-  if (isShuffling) {
-    stopAndDraw();
-  } else {
-    if (!startShuffleBtn.disabled) startShuffle();
-  }
-});
-volumeRange.addEventListener('input', (e) => setAudioVolume(e.target.value));
-
-/* ====== 初期化 ====== */
-loadAudio();
-buildDeck();
-renderSlots();
-updateUI();
-/* ====== 注意 ======
- - カード画像は /cards/0.jpg ... /cards/77.jpg に配置してください。
- - 背面画像は /cards/back.jpg を用意してください。
- - サウンドは任意です。ブラウザの自動再生ポリシーにより最初はユーザー操作が必要です。
-*/
 </script>
+
 </body>
 </html>

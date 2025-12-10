@@ -18,11 +18,13 @@
     padding-top: 25px;
   }
 
+  /* --- LIVE CARD --- */
   .card-frame {
     width: 300px;
     height: 500px;
     margin: 0 auto;
     perspective: 1200px;
+    position: relative;
   }
 
   .card-inner {
@@ -49,18 +51,41 @@
   .card-back {
     background-size: cover;
     background-position: center center;
-    transform: rotateY(0deg);
   }
 
   .card-face {
     transform: rotateY(180deg);
   }
 
-  .deck {
-    margin: 30px auto;
+  /* --- SHUFFLE FX --- */
+  .shuffle-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 12px;
+  }
+
+  /* --- DECK AREA --- */
+  .deck-wrapper {
+    margin: 25px auto 0;
     width: 300px;
-    height: 30px;
+    height: 120px;
+    border: 2px solid #555;
+    border-radius: 10px;
     position: relative;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .deck-label {
+    position: absolute;
+    top: -18px;
+    left: 10px;
+    font-size: 14px;
+    color: #aaa;
   }
 
   .stack-card {
@@ -70,24 +95,14 @@
     background-position: center center;
     border-radius: 6px;
     position: absolute;
-    top: 0;
     left: calc(50% - 30px);
-  }
-
-  .shuffle-overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center center;
-    opacity: 0;
-    pointer-events: none;
   }
 
   .hud {
     margin-top: 20px;
     font-size: 20px;
   }
+
 </style>
 </head>
 
@@ -97,15 +112,19 @@
   <div class="card-frame">
     <div id="liveCard" class="card-inner">
       <div id="liveBack" class="card-back"></div>
-      <div class="card-face"><img id="liveFaceImg" src="" style="width:100%; height:100%; object-fit:cover;"></div>
+      <div class="card-face"><img id="liveFaceImg" src="" style="width:100%;height:100%;object-fit:cover;"></div>
       <div id="shuffleFx" class="shuffle-overlay"></div>
     </div>
   </div>
 
-  <div class="hud" id="hud">準備してください</div>
+  <div class="hud" id="hud">カードをクリック</div>
 
-  <div class="deck" id="deck"></div>
-  <div style="margin-top:8px" class="small">カード：cards/0.jpg … cards/77.jpg ／ 裏面：cards/back.jpg</div>
+  <!-- ★ デッキ枠（初期は空） -->
+  <div class="deck-wrapper" id="deck-wrapper">
+    <div class="deck-label">DECK</div>
+    <div id="deck"></div>
+  </div>
+
 </div>
 
 <script>
@@ -114,20 +133,13 @@ const CARDS_BASE = location.origin + "/cards/";
 let deckState = [];
 let drawing = false;
 
-// 初期化
+/* 初期処理 */
 window.addEventListener("DOMContentLoaded", () => {
   initCardBack();
   initDeck();
 });
 
-// デッキは空で開始
-function initDeck() {
-  const deck = document.getElementById("deck");
-  deck.innerHTML = "";
-  deckState = [];
-}
-
-// 裏面設定
+/* 裏面設定 */
 function initCardBack() {
   document.getElementById("liveBack").style.backgroundImage =
     `url("${CARDS_BASE}back.jpg")`;
@@ -135,7 +147,13 @@ function initCardBack() {
     `url("${CARDS_BASE}back.jpg")`;
 }
 
-// ★ シャッフルアニメーション（カードフェイス側で y軸方向スライド）
+/* デッキは空カードなし、枠だけ */
+function initDeck() {
+  document.getElementById("deck").innerHTML = "";
+  deckState = [];
+}
+
+/* シャッフルアニメ（カードフェイス側） */
 async function playShuffleFx() {
   const fx = document.getElementById("shuffleFx");
 
@@ -159,32 +177,28 @@ async function playShuffleFx() {
   await wait(300);
 }
 
-// カードを引く
+/* カードを引く */
 async function drawCard() {
   if (drawing) return;
   drawing = true;
 
   document.getElementById("hud").textContent = "シャッフル中…";
 
-  // シャッフルアニメ
   await playShuffleFx();
 
-  // ランダムカード
   let cardId = Math.floor(Math.random() * 78);
   let face = CARDS_BASE + cardId + ".jpg";
-
   document.getElementById("liveFaceImg").src = face;
 
-  // 表向きにする
   document.getElementById("liveCard").classList.add("faceUp");
 
-  // デッキへ裏面を積む
   pushCardToDeck();
 
   document.getElementById("hud").textContent = "カードを引きました";
   drawing = false;
 }
 
+/* デッキへ裏面カードを積む */
 function pushCardToDeck() {
   const deck = document.getElementById("deck");
 
@@ -199,14 +213,13 @@ function pushCardToDeck() {
   deckState.push(1);
 }
 
-// ヘルパー
+/* ヘルパー */
 function wait(ms) {
   return new Promise(res => setTimeout(res, ms));
 }
 
-// カードクリックで draw
+/* カードクリックで draw */
 document.getElementById("liveCard").addEventListener("click", () => {
-  // 一度めくったら次のシャッフルのために裏向けに戻す
   document.getElementById("liveCard").classList.remove("faceUp");
   drawCard();
 });

@@ -44,4 +44,310 @@ button{padding:8px 12px;border-radius:8px;border:0;background:linear-gradient(18
 /* -------------------------
    STACK (face area) styling
    ------------------------- */
-#stackArea{ position:absolute; top:12px; left:50%; transform:translateX(-50%); width:220px; height:26
+#stackArea{ position:absolute; top:12px; left:50%; transform:translateX(-50%); width:220px; height:260px; pointer-events:none; }
+.stack-card{
+  position:absolute;
+  left:0; right:0; margin:0 auto;
+  width:220px; height:320px; border-radius:12px;
+  background-size:cover; background-position:center; background-repeat:no-repeat;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+  transform-origin:center center;
+  will-change: transform, opacity;
+  opacity:0;
+}
+/* visible stack baseline (small offsets) */
+.stack-card.s0{ transform: translateY(0px) scale(1); z-index:40; opacity:1; }
+.stack-card.s1{ transform: translateY(-6px) scale(0.995); z-index:39; opacity:1; }
+.stack-card.s2{ transform: translateY(-12px) scale(0.99); z-index:38; opacity:1; }
+.stack-card.s3{ transform: translateY(-18px) scale(0.985); z-index:37; opacity:1; }
+.stack-card.s4{ transform: translateY(-24px) scale(0.98); z-index:36; opacity:1; }
+.stack-card.s5{ transform: translateY(-30px) scale(0.975); z-index:35; opacity:1; }
+
+/* shuffle animation on each stack-card -> small vertical wobble loop */
+@keyframes stackWobble {
+  0%{ transform: translateY(0) rotateZ(0deg) }
+  25%{ transform: translateY(-28%) rotateZ(-2deg) }
+  50%{ transform: translateY(0) rotateZ(0deg) }
+  75%{ transform: translateY(28%) rotateZ(2deg) }
+  100%{ transform: translateY(0) rotateZ(0deg) }
+}
+.stack-card.shuf {
+  animation-name: stackWobble;
+  animation-duration: var(--shuffle-anim-duration);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+/* small helper for flying clone animation (will be set inline) */
+.fly-clone{ position:fixed; left:0; top:0; width:220px; height:320px; border-radius:12px; background-size:cover; background-position:center; z-index:9999; pointer-events:none; box-shadow:0 18px 40px rgba(0,0,0,0.6); transition: transform .6s cubic-bezier(.2,.9,.2,1), opacity .35s linear; }
+
+/* responsive */
+@media(max-width:920px){ .left{width:100%} .shuffle-area{width:100%;padding-top:30px} #stackArea{left:50%;transform:translateX(-50%);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1>Tarot — Shuffle from Stack</h1>
+      <div class="small">表 = cards/0.jpg … cards/77.jpg ／ 裏 = cards/back.jpg</div>
+    </div>
+    <div class="small" id="dbgBase"></div>
+  </div>
+
+  <div class="controls">
+    <label class="small">引く枚数：
+      <input id="numToDraw" type="number" min="1" max="20" value="3" />
+    </label>
+    <button id="startSession">デッキ準備</button>
+    <button id="startShuffle" disabled>シャッフル開始</button>
+    <button id="stopAndDraw" disabled>STOP → 引く</button>
+    <div style="margin-left:auto" class="small" id="remainingBadge">残り: --</div>
+  </div>
+
+  <div class="panel">
+    <div class="left">
+      <div id="shuffleArea" class="shuffle-area" title="シャッフル中は束（stack）から1枚ずつ出ます">
+        <div class="card-frame">
+          <div id="liveCard" class="card-inner faceDown" aria-hidden="true">
+            <div id="liveBack" class="back-face"></div>
+            <div class="front-face"><img id="liveFaceImg" src="" alt="card face" /></div>
+          </div>
+        </div>
+        <div id="stackArea" aria-hidden="true"></div>
+        <div class="hud" id="hud">準備してください</div>
+      </div>
+
+      <div class="small" style="margin-top:8px">カード：<code>cards/0.jpg</code> … <code>cards/77.jpg</code> / 背面：<code>cards/back.jpg</code></div>
+    </div>
+
+    <div style="flex:1;min-width:360px">
+      <div class="small">ドロー位置（左→右）</div>
+      <div id="slots" class="slots" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="small">効果音は任意（sounds/ に置いてください）。</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // Base detection
+  function computeBase(){ try{ const s=document.currentScript; if(s && s.src) return new URL('.', s.src).href; }catch(e){} return location.href.replace(/\/[^\/]*$/,'/'); }
+  const BASE = computeBase();
+  document.getElementById('dbgBase').textContent = 'base: ' + BASE;
+  const PATHS = { cards: BASE + 'cards/', sounds: BASE + 'sounds/' };
+  const CARD_COUNT = 78;
+  const DEFAULT_SHUFFLE_SPEED = 70;
+  const SHUFFLE_ANIM_DURATION_MS = 120;
+
+  // State
+  let deck = [], drawn = [], desiredDraw = 3, shuffleTimer=null, liveIdx=0, isShuffling=false, shuffleSpeed = DEFAULT_SHUFFLE_SPEED;
+  // Elements
+  const liveCard = document.getElementById('liveCard'), liveBack=document.getElementById('liveBack'), liveFaceImg=document.getElementById('liveFaceImg');
+  const stackArea = document.getElementById('stackArea'), hud=document.getElementById('hud');
+  const startSessionBtn=document.getElementById('startSession'), startShuffleBtn=document.getElementById('startShuffle'), stopAndDrawBtn=document.getElementById('stopAndDraw');
+  const slotsEl=document.getElementById('slots'), numToDrawEl=document.getElementById('numToDraw'), remainingBadge=document.getElementById('remainingBadge');
+
+  // audio (optional)
+  const audioFiles = { shuffleLoop: PATHS.sounds + 'shuffle_loop.mp3', drawPop: PATHS.sounds + 'draw_pop.mp3', click: PATHS.sounds + 'select_click.mp3', flip: PATHS.sounds + 'flip.wav' };
+  const audio = {};
+  function loadAudio(){ for(const k in audioFiles){ try{ audio[k]=new Audio(audioFiles[k]); audio[k].preload='auto'; if(k==='shuffleLoop') audio[k].loop=true; }catch(e){ audio[k]=null; } } }
+  function playSound(k){ try{ const a=audio[k]; if(!a) return; if(k==='shuffleLoop'){ if(a.paused) a.play().catch(()=>{}); } else { const c=a.cloneNode(true); c.play().catch(()=>{}); } }catch(e){} }
+  function stopSound(k){ try{ const a=audio[k]; if(a){ a.pause(); a.currentTime=0; } }catch(e){} }
+
+  // Build deck (pairs of upright/reversed)
+  function cryptoShuffle(arr){ for(let i=arr.length-1;i>0;i--){ const r=crypto.getRandomValues(new Uint32Array(1))[0]; const j=r%(i+1); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
+  function buildDeck(){
+    deck=[]; for(let id=0;id<CARD_COUNT;id++){ deck.push({id,orientation:'upright'}); deck.push({id,orientation:'reversed'}); }
+    cryptoShuffle(deck); drawn=[]; desiredDraw = parseInt(numToDrawEl.value)||1; updateUI(); renderSlots(); hud.textContent='デッキ準備完了';
+  }
+  function updateUI(){ remainingBadge.textContent = '残り: ' + deck.length; startShuffleBtn.disabled = deck.length===0 || drawn.length>=desiredDraw; }
+
+  // Render empty slots
+  function renderSlots(){
+    slotsEl.innerHTML=''; const target = Math.max(desiredDraw, drawn.length);
+    for(let i=0;i<target;i++){
+      const slot=document.createElement('div'); slot.className='slot';
+      const inner=document.createElement('div'); inner.className='inner';
+      const cardInner=document.createElement('div'); cardInner.className='card-inner faceDown';
+      const backFace=document.createElement('div'); backFace.className='back-face';
+      backFace.style.backgroundImage = 'url("' + PATHS.cards + 'back.jpg"), linear-gradient(180deg,#0b1524,#08121a)';
+      backFace.style.backgroundSize='cover'; backFace.style.backgroundPosition='center';
+      const frontFace=document.createElement('div'); frontFace.className='front-face';
+      const img=document.createElement('img'); img.src=''; frontFace.appendChild(img);
+      cardInner.appendChild(backFace); cardInner.appendChild(frontFace);
+      inner.appendChild(cardInner); slot.appendChild(inner);
+      const badge=document.createElement('div'); badge.className='index-badge'; badge.textContent=(i+1); slot.appendChild(badge);
+      slotsEl.appendChild(slot);
+    }
+  }
+
+  // Stack visuals - create N visual cards at stackArea
+  const STACK_VIS = 6;
+  function buildStackVisuals(){
+    stackArea.innerHTML='';
+    for(let i=0;i<STACK_VIS;i++){
+      const el=document.createElement('div'); el.className='stack-card s'+i;
+      el.style.backgroundImage = 'url("' + PATHS.cards + 'back.jpg")';
+      el.style.opacity = (i<STACK_VIS?1:0);
+      // small random rotation jitter
+      const rz = (Math.random()*4 - 2).toFixed(2);
+      el.style.transform = `translateY(${ -i*6 }px) scale(${1 - i*0.005}) rotateZ(${rz}deg)`;
+      stackArea.appendChild(el);
+    }
+  }
+
+  // Apply per-stack animation class/ delays when shuffling
+  function startStackAnimation(){
+    const nodes = Array.from(stackArea.children);
+    nodes.forEach((n, idx) => {
+      n.classList.add('shuf');
+      // random negative delay for variety
+      const delay = (Math.random()*-0.25).toFixed(3) + 's';
+      n.style.animationDelay = delay;
+    });
+    // also animate liveBack element (top preview)
+    liveBack.classList.add('shuf');
+  }
+  function stopStackAnimation(){
+    const nodes = Array.from(stackArea.children);
+    nodes.forEach(n=>{ n.classList.remove('shuf'); n.style.animationDelay=''; });
+    liveBack.classList.remove('shuf');
+  }
+
+  // Fly a clone from stack center to target slot (returns Promise resolves on animation end)
+  function flyFromStackToSlot(targetSlot){
+    return new Promise((resolve)=>{
+      // compute source rect (stack center roughly over liveCard)
+      const srcRect = liveCard.getBoundingClientRect();
+      const dstRect = targetSlot.getBoundingClientRect();
+      const clone = document.createElement('div'); clone.className='fly-clone';
+      clone.style.backgroundImage = 'url("' + PATHS.cards + 'back.jpg")';
+      // start at srcRect
+      const sx = srcRect.left + (srcRect.width - 220)/2;
+      const sy = srcRect.top + (srcRect.height - 320)/2;
+      clone.style.left = sx + 'px'; clone.style.top = sy + 'px'; clone.style.width = srcRect.width + 'px'; clone.style.height = srcRect.height + 'px';
+      document.body.appendChild(clone);
+      // force reflow
+      clone.getBoundingClientRect();
+      // compute translate and scale to dstRect center
+      const tx = dstRect.left + (dstRect.width - srcRect.width)/2 - sx;
+      const ty = dstRect.top + (dstRect.height - srcRect.height)/2 - sy;
+      const scale = dstRect.width / srcRect.width;
+      // animate using transform
+      clone.style.transition = 'transform 600ms cubic-bezier(.2,.9,.2,1), opacity 220ms linear';
+      clone.style.transform = `translate(${tx}px, ${ty}px) scale(${scale}) rotate(0.001deg)`;
+      // optional small rotation on arrival
+      setTimeout(()=>{ clone.style.opacity='0'; }, 560);
+      setTimeout(()=>{ clone.remove(); resolve(); }, 680);
+    });
+  }
+
+  // Start shuffle: animate stack visuals and advance live preview index rapidly
+  function startShuffle(){
+    if(deck.length===0){ alert('まず「デッキ準備」を押してください。'); return; }
+    if(drawn.length>=desiredDraw){ alert('既に指定枚数を引いています。'); return; }
+    isShuffling = true;
+    document.documentElement.style.setProperty('--shuffle-anim-duration', (SHUFFLE_ANIM_DURATION_MS/1000) + 's');
+    playSound('shuffleLoop');
+    startShuffleBtn.disabled = true; stopAndDrawBtn.disabled=false;
+    hud.textContent = 'シャッフル中…（STOPで確定）';
+    liveFaceImg.src='';
+    liveCard.classList.add('faceDown');
+    startStackAnimation();
+    liveIdx = Math.floor(Math.random() * deck.length);
+    shuffleTimer = setInterval(()=>{
+      if(!deck.length) return;
+      liveIdx = (liveIdx + 1) % deck.length;
+      const sample = deck[liveIdx];
+      // preload front image so it's available when needed
+      liveFaceImg.src = PATHS.cards + sample.id + '.jpg';
+      // small jitter on liveCard to show motion
+      const t = (Math.random()-0.5) * 6;
+      liveCard.style.transform = 'rotateY(0deg) translateX(' + t + 'px)';
+    }, shuffleSpeed);
+  }
+
+  // Stop shuffle: fly one card from stack to next slot
+  async function stopAndDraw(){
+    if(!isShuffling) return;
+    clearInterval(shuffleTimer); shuffleTimer=null; isShuffling=false;
+    stopSound('shuffleLoop');
+    startStackAnimation(); // ensure running until clone launched
+    // create animation: fly clone to slot
+    const picked = deck[liveIdx];
+    if(!picked){ hud.textContent='カードが見つかりません'; stopStackAnimation(); return; }
+    playSound('click'); setTimeout(()=>playSound('drawPop'),80);
+    drawn.push({...picked});
+    // remove pair from deck
+    deck = deck.filter(c => c.id !== picked.id);
+    updateUI();
+    // compute target slot
+    const slotIndex = drawn.length - 1;
+    const slot = slotsEl.children[slotIndex];
+    if(slot){
+      // animate clone from stack to slot
+      await flyFromStackToSlot(slot);
+      // now set slot front image and keep it faceDown
+      const cardInner = slot.querySelector('.card-inner');
+      const frontImg = cardInner.querySelector('.front-face img');
+      frontImg.src = PATHS.cards + picked.id + '.jpg';
+      if(picked.orientation==='reversed') cardInner.dataset.rev='true'; else delete cardInner.dataset.rev;
+      cardInner.classList.add('faceDown');
+      // make sure back-face uses back.jpg
+      const backFace = cardInner.querySelector('.back-face');
+      if(backFace) backFace.style.backgroundImage = 'url("' + PATHS.cards + 'back.jpg"), linear-gradient(180deg,#0b1524,#08121a)';
+    }
+    hud.textContent = '引いた ' + drawn.length + ' 枚 / 残り ' + deck.length;
+    stopStackAnimation();
+    if(drawn.length >= desiredDraw || deck.length===0){
+      startShuffleBtn.disabled=true; stopAndDrawBtn.disabled=true;
+      hud.textContent = '配置完了 — これから一枚ずつ表にめくります';
+      setTimeout(()=>revealSequentially(),600);
+    } else {
+      startShuffleBtn.disabled=false; stopAndDrawBtn.disabled=true;
+    }
+  }
+
+  // Reveal sequentially: remove faceDown -> revealed
+  async function revealSequentially(){
+    for(let i=0;i<drawn.length;i++){
+      const slot = slotsEl.children[i];
+      if(!slot) continue;
+      const cardInner = slot.querySelector('.card-inner');
+      playSound('flip');
+      cardInner.classList.remove('faceDown'); cardInner.classList.add('revealed');
+      const frontImg = cardInner.querySelector('.front-face img');
+      if(cardInner.dataset.rev==='true') frontImg.style.transform='rotate(180deg)'; else frontImg.style.transform='rotate(0deg)';
+      await new Promise(r=>setTimeout(r,700));
+    }
+    hud.textContent = '全て表になりました';
+  }
+
+  // Events and initialization
+  numToDrawEl.addEventListener('change', ()=>{ desiredDraw = parseInt(numToDrawEl.value)||1; renderSlots(); });
+  startSessionBtn.addEventListener('click', ()=>{ desiredDraw = parseInt(numToDrawEl.value)||1; buildDeck(); startShuffleBtn.disabled=false; stopAndDrawBtn.disabled=true; });
+  startShuffleBtn.addEventListener('click', startShuffle);
+  stopAndDrawBtn.addEventListener('click', stopAndDraw);
+  document.getElementById('shuffleArea').addEventListener('click', ()=>{ if(isShuffling) stopAndDraw(); else if(!startShuffleBtn.disabled) startShuffle(); });
+
+  // build stack visuals and init
+  function setLiveBack(){ liveBack.style.backgroundImage = 'url("' + PATHS.cards + 'back.jpg"), linear-gradient(180deg,#0b1524,#08121a)'; liveBack.style.backgroundSize='cover'; liveBack.style.backgroundPosition='center'; }
+  setLiveBack(); buildStackVisuals(); loadAudio(); buildDeck(); renderSlots(); updateUI();
+
+  // Expose helper
+  window.__tarot = {
+    setShuffleSpeed(ms){ shuffleSpeed = Math.max(10, Number(ms)||DEFAULT_SHUFFLE_SPEED); },
+    // for debugging: trigger single fly animation
+    _debugFlyToSlot: async function(index){
+      const slot = slotsEl.children[index];
+      if(slot) await flyFromStackToSlot(slot);
+    }
+  };
+})();
+</script>
+</body>
+</html>

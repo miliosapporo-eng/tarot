@@ -1,347 +1,334 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Tarot Shuffle & Draw</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tarot Shuffle System</title>
 
 <style>
-  :root{
-    --bg:#000;
-    --panel:#0b0f14;
-    --accent:#d4a74d;
-    --muted:#77808a;
+  body {
+    background: #000;
+    color: #fff;
+    font-family: "Noto Sans JP", sans-serif;
+    margin: 0;
+    padding: 20px;
+    overflow-x: hidden;
   }
 
-  html,body { margin:0; padding:0; background:var(--bg); color:#fff; font-family: "Noto Sans JP", sans-serif; }
-
-  header {
-    padding:14px 20px;
-    background:#000;
-    border-bottom:1px solid rgba(255,255,255,0.08);
-    font-size:18px;
-    font-weight:700;
-  }
-
-  .container {
-    padding:20px;
-    max-width:1200px;
-    margin:0 auto;
+  h1 {
+    margin-top: 0;
+    font-size: 20px;
+    margin-bottom: 12px;
   }
 
   .controls {
-    display:flex;
-    gap:14px;
-    align-items:center;
-    flex-wrap:wrap;
-    margin-bottom:18px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
   }
 
   select, button {
-    padding:10px 14px;
-    border-radius:8px;
-    border:0;
-    font-size:15px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
   }
 
   select {
-    background:#111;
-    color:#fff;
+    background: #111;
+    color: #fff;
+    border: 1px solid #333;
   }
 
   button {
-    background:var(--accent);
-    color:#000;
-    font-weight:700;
-    cursor:pointer;
+    background: #f6b042;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
   }
 
   button.secondary {
-    background:#222;
-    color:var(--muted);
+    background: #222;
+    color: #aaa;
+    border: 1px solid #444;
   }
 
-  .main-area {
-    display:flex;
-    gap:30px;
-    flex-wrap:wrap;
+  /* Layout */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
   }
 
-  /* カード束（中央） */
-  .stack-area {
-    width:240px;
-    height:340px;
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:14px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#050505;
-    position:relative;
-    overflow:hidden;
+  /* Live shuffle card (center stack) */
+  .card-frame {
+    width: 200px;
+    height: 300px;
+    perspective: 1200px;
+    position: relative;
   }
 
-  .stack-card {
-    width:200px;
-    height:300px;
-    background-size:cover;
-    background-position:center;
-    border-radius:10px;
-    position:absolute;
-    transform:translateY(0);
-    transition:transform 0.15s linear;
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
   }
 
-  /* デッキ（結果配置場所） */
+  .card-face, .card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  }
+
+  .card-back {
+    background-image: url("cards/back.jpg");
+  }
+
+  .card-face {
+    transform: rotateY(180deg);
+  }
+
+  .faceDown {
+    transform: rotateY(0deg);
+  }
+
+  .faceUp {
+    transform: rotateY(180deg);
+  }
+
+  /* Deck slots */
   .deck-area {
-    flex:1;
-    display:grid;
-    gap:14px;
-    grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .deck-slot {
-    width:120px;
-    height:180px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.15);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#090909;
-    position:relative;
+  .slot {
+    width: 120px;
+    height: 180px;
+    border: 2px dashed #333;
+    border-radius: 10px;
+    position: relative;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* デッキ内の裏面 */
-  .deck-card-back {
-    width:100%;
-    height:100%;
-    background-size:cover;
-    background-position:center;
-    border-radius:10px;
+  .slot .slot-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+    position: absolute;
   }
 
-  /* 手札（引いたカードの表面） */
+  /* Hand area */
   .hand-area {
-    margin-top:30px;
-    padding-top:20px;
-    border-top:1px solid rgba(255,255,255,0.1);
-  }
-
-  .hand-cards {
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 25px;
   }
 
   .hand-card {
-    width:140px;
-    height:220px;
-    background-size:cover;
-    background-position:center;
-    border-radius:10px;
+    width: 140px;
+    height: 210px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+  }
+
+  #hud {
+    text-align: center;
+    font-size: 16px;
+    margin-top: 10px;
+    color: #aaa;
   }
 </style>
 </head>
 <body>
 
-<header>Tarot Shuffle & Draw</header>
+<h1>Tarot Shuffle System</h1>
 
-<div class="container">
+<div class="controls">
+  <label for="spreadSelect">スプレッド：</label>
 
-  <div class="controls">
-    <label>スプレッド：</label>
+  <select id="spreadSelect">
+    <option value="1">ワンオラクル（1枚引き）</option>
+    <option value="2">ツーオラクル（2枚引き）</option>
+    <option value="2">ツーマインド（2枚引き）</option>
+    <option value="2">シンプルクロス（2枚引き）</option>
+    <option value="3">スリーカード（3枚引き）</option>
+    <option value="3">ゴールデントリン・スプレッド（3枚引き）</option>
+    <option value="4">フォーカード（4枚引き）</option>
+    <option value="5">ギリシャ十字（5枚引き）</option>
+    <option value="6">ピラミッド（6枚引き）</option>
+    <option value="7">ヘキサグラムスプレッド（7枚引き）</option>
+    <option value="7">二者択一（7枚引き）</option>
+    <option value="10">ケルト十字スプレッド（10枚引き）</option>
+    <option value="13">ホロスコープ・スプレッド（13枚引き）</option>
+  </select>
 
-    <select id="spreadSelect">
-      <option value="1">ワンオラクル（1）</option>
+  <button id="prepareBtn">準備</button>
+  <button id="shuffleBtn">シャッフル開始</button>
+  <button id="stopBtn" class="secondary">STOP / Draw</button>
+</div>
 
-      <option value="2">ツーオラクル（2）</option>
-      <option value="2">ツーマインド（2）</option>
-      <option value="2">シンプルクロス（2）</option>
+<div class="layout">
 
-      <option value="3">スリーカード（3）</option>
-      <option value="3">ゴールデントリン・スプレッド（3）</option>
-
-      <option value="4">フォーカード（4）</option>
-
-      <option value="5">ギリシャ十字（5）</option>
-
-      <option value="6">ピラミッド（6）</option>
-
-      <option value="7">ヘキサグラムスプレッド（7）</option>
-      <option value="7">二者択一（7）</option>
-
-      <option value="10">ケルト十字スプレッド（10）</option>
-
-      <option value="13">ホロスコープ・スプレッド（13）</option>
-    </select>
-
-    <button id="startBtn">シャッフル開始</button>
-    <button id="drawBtn" class="secondary">1枚引く</button>
-    <button id="revealBtn" class="secondary">めくる</button>
-  </div>
-
-  <div class="main-area">
-
-    <div class="stack-area" id="stackArea">
-      <!-- シャッフルアニメ用カード -->
-      <div id="stackCard" class="stack-card"></div>
-    </div>
-
-    <div class="deck-area" id="deckArea">
-      <!-- ここにデッキ枠（空欄）が生成される -->
+  <!-- LIVE SHUFFLE CARD -->
+  <div class="card-frame">
+    <div id="liveCard" class="card-inner faceDown">
+      <div class="card-back"></div>
+      <div class="card-face"><img id="liveFaceImg" src="" alt="" /></div>
     </div>
   </div>
 
-  <div class="hand-area">
-    <h3>手札（引いたカードの表面）</h3>
-    <div id="handCards" class="hand-cards"></div>
-  </div>
+  <div id="hud">準備してください</div>
+
+  <!-- Generated deck slots -->
+  <div id="deckArea" class="deck-area"></div>
+
+  <!-- Pulled cards -->
+  <div id="handArea" class="hand-area"></div>
 
 </div>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>Tarot App</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #222;
-        color: #fff;
-        text-align: center;
-        padding: 20px;
-    }
-
-    select, button {
-        padding: 8px;
-        margin: 10px;
-        font-size: 16px;
-    }
-
-    #deck {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    .card-slot {
-        width: 120px;
-        height: 200px;
-        border: 2px dashed #888;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #333;
-    }
-
-    .card-slot img {
-        width: 100%;
-        height: 100%;
-        border-radius: 10px;
-    }
-</style>
-</head>
-<body>
-
-<h1>Tarot Reading</h1>
-
-<!-- スプレッド選択プルダウン -->
-<label>スプレッドを選択：</label>
-<select id="spreadSelect">
-    <option value="1">ワンオラクル（1枚）</option>
-    <option value="2">ツーオラクル（2枚）</option>
-    <option value="2">ツーマインド（2枚）</option>
-    <option value="2">シンプルクロス（2枚）</option>
-    <option value="3">スリーカード（3枚）</option>
-    <option value="3">ゴールデントリン・スプレッド（3枚）</option>
-    <option value="4">フォーカード（4枚）</option>
-    <option value="5">ギリシャ十字（5枚）</option>
-    <option value="6">ピラミッド（6枚）</option>
-    <option value="7">ヘキサグラムスプレッド（7枚）</option>
-    <option value="7">二者択一（7枚）</option>
-    <option value="10">ケルト十字スプレッド（10枚）</option>
-    <option value="13">ホロスコープ・スプレッド（13枚）</option>
-</select>
-
-<br>
-
-<button onclick="drawCards()">カードを引く</button>
-
-<div id="deck"></div>
 
 <script>
-// カードファイル名生成（例：major_0.jpg 〜 minor_wands_1.jpg など）
-const cardImages = [];
-const suits = ["wands", "cups", "swords", "pentacles"];
-
-// 大アルカナ 0〜21
-for (let i = 0; i <= 21; i++) {
-    cardImages.push(`cards/major_${i}.jpg`);
+/* ==========================================================
+    Utility  
+========================================================== */
+function shuffleArray(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
 }
 
-// 小アルカナ 4スート×1〜14
-for (let suit of suits) {
-    for (let num = 1; num <= 14; num++) {
-        cardImages.push(`cards/minor_${suit}_${num}.jpg`);
-    }
-}
+/* ==========================================================
+    Tarot System
+========================================================== */
+const spreadSelect = document.getElementById("spreadSelect");
+const prepareBtn = document.getElementById("prepareBtn");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const stopBtn = document.getElementById("stopBtn");
 
-// 毎回シャッフルする
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const r = Math.floor(Math.random() * (i + 1));
-        [array[i], array[r]] = [array[r], array[i]];
-    }
-    return array;
-}
+const deckArea = document.getElementById("deckArea");
+const handArea = document.getElementById("handArea");
+const hud = document.getElementById("hud");
 
-// カードを引く
-function drawCards() {
-    const count = parseInt(document.getElementById("spreadSelect").value);
+const liveCard = document.getElementById("liveCard");
+const liveFaceImg = document.getElementById("liveFaceImg");
 
-    let deckDiv = document.getElementById("deck");
-    deckDiv.innerHTML = ""; // リセット（枠だけを後で生成）
+let deck = [];        // 0–77
+let queue = [];       // Shuffled queue
+let picked = [];      // Drawn cards
+let N = 0;            // Draw count
+let shuffleTimer = null;
 
-    // シャッフル
-    const shuffled = shuffle([...cardImages]);
+/* Load card list */
+for (let i = 0; i < 78; i++) deck.push(i);
 
-    // カード枠を表示（はじめは空欄）
-    for (let i = 0; i < count; i++) {
-        const slot = document.createElement("div");
-        slot.className = "card-slot";
-        deckDiv.appendChild(slot);
-    }
+/* ----------------------------------------------------------
+    PREPARE  
+---------------------------------------------------------- */
+prepareBtn.onclick = () => {
+  N = Number(spreadSelect.value);
 
-    // 少し遅れて裏面を表示（演出用）
+  deckArea.innerHTML = "";
+  handArea.innerHTML = "";
+  hud.textContent = "シャッフルを開始できます";
+
+  // Generate deck slots
+  for (let i = 0; i < N; i++) {
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.dataset.index = i;
+    deckArea.appendChild(slot);
+  }
+};
+
+/* ----------------------------------------------------------
+    SHUFFLE  
+---------------------------------------------------------- */
+shuffleBtn.onclick = () => {
+
+  picked = [];
+  queue = [...deck];
+  shuffleArray(queue);
+
+  hud.textContent = "シャッフル中… STOP を押してください";
+
+  let angle = 0;
+
+  shuffleTimer = setInterval(() => {
+    angle += 40;
+    liveCard.style.transform = `rotateY(${angle}deg)`;
+
+    const r = Math.floor(Math.random() * 78);
+    liveFaceImg.src = `cards/${r}.jpg`;
+  }, 60);
+};
+
+/* ----------------------------------------------------------
+    STOP → Draw 1  
+---------------------------------------------------------- */
+stopBtn.onclick = () => {
+  if (!shuffleTimer) return;
+
+  clearInterval(shuffleTimer);
+  shuffleTimer = null;
+
+  // Draw next card
+  const next = queue.shift();
+  picked.push(next);
+
+  hud.textContent = `${picked.length} / ${N} 枚 引きました`;
+
+  // Move to deck slot
+  const slot = deckArea.querySelector(`.slot[data-index="${picked.length - 1}"]`);
+
+  const card = document.createElement("div");
+  card.className = "slot-card";
+  card.style.backgroundImage = `url("cards/back.jpg")`;
+
+  slot.appendChild(card);
+
+  // Flip live card to show face
+  liveCard.classList.remove("faceDown");
+  liveCard.classList.add("faceUp");
+  liveFaceImg.src = `cards/${next}.jpg`;
+
+  // All finished → Show drawn cards
+  if (picked.length === N) {
+    hud.textContent = "すべて引きました。表を表示します。";
+
     setTimeout(() => {
-        const slots = document.querySelectorAll(".card-slot");
-
-        slots.forEach((slot, index) => {
-            const img = document.createElement("img");
-            img.src = "cards/back.jpg";  // 裏面
-            img.dataset.front = shuffled[index]; // 表のパスを保持
-            img.dataset.flipped = "false";
-
-            // クリックしたら表にめくる
-            img.onclick = function () {
-                if (img.dataset.flipped === "false") {
-                    img.src = img.dataset.front;
-                    img.dataset.flipped = "true";
-                } else {
-                    img.src = "cards/back.jpg";
-                    img.dataset.flipped = "false";
-                }
-            };
-
-            slot.appendChild(img);
-        });
-
-    }, 200);
-}
+      handArea.innerHTML = "";
+      picked.forEach(id => {
+        const c = document.createElement("div");
+        c.className = "hand-card";
+        c.style.backgroundImage = `url("cards/${id}.jpg")`;
+        handArea.appendChild(c);
+      });
+    }, 1000);
+  }
+};
 </script>
 </body>
 </html>

@@ -128,9 +128,14 @@ button[disabled] {
 }
 
 .card-back {
-    background-color: var(--card-back-color);
-    background-image: repeating-linear-gradient(45deg, #330055, #330055 10px, #4b0082 10px, #4b0082 20px);
-    border: 5px solid gold;
+    /* グラデーションや色指定を削除し、画像を使用 */
+    background-image: url('card/back.png'); /* <--- ここを修正 */
+    background-size: cover;
+    background-position: center;
+    border: none; /* 画像を使うならボーダーは不要かもしれません */
+}
+
+/* カードの表面（face）は、JavaScriptで動的に背景画像を設定するため、ここでは変更しません。 */
 }
 
 .card-face {

@@ -85,6 +85,8 @@ function startPreparation() {
 
 // --- 3. カードを引く (Fix: 1枚しか引けないエラーの解消) ---
 
+// --- 3. カードを引く (Fix: 1枚しか引けないエラーの解消) ---
+
 function drawCards() {
     if (isShuffling || drawButton.disabled) return;
     
@@ -106,6 +108,9 @@ function drawCards() {
 
     // カードを一枚ずつ配置（ディールアニメーション）
     drawnCards.forEach((cardData, index) => {
+        // カード表面の画像パスを生成
+        const imagePath = `card/${cardData.number}.png`; // 例: card/0.png
+
         const cardContainer = document.createElement('div');
         cardContainer.className = 'card-container';
         cardContainer.dataset.index = index;
@@ -113,11 +118,10 @@ function drawCards() {
         cardContainer.dataset.position = positions[index];
         cardContainer.innerHTML = `
             <div class="card">
-                <div class="card-back">TAROT</div>
-                <div class="card-face">
-                    <span class="card-name">${cardData.name}</span>
-                    <span class="card-number">No.${cardData.number}</span>
-                    <span class="card-position">${positions[index]} の位置</span>
+                <div class="card-back"></div>
+                <div class="card-face" style="background-image: url('${imagePath}'); background-size: cover; background-position: center;">
+                    <span class="card-name visually-hidden">${cardData.name}</span>
+                    <span class="card-position visually-hidden">${positions[index]} の位置</span>
                 </div>
             </div>
         `;
@@ -136,6 +140,8 @@ function drawCards() {
 }
 
 // --- 4. カードのめくり (スタイリッシュな表現) ---
+
+// ... (flipCard関数は変更なし。ただし、カード表面に情報が表示されないため、結果表示ロジックを工夫しても良いかもしれません)
 
 function flipCard(event) {
     const cardContainer = event.currentTarget;

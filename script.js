@@ -109,8 +109,7 @@ function drawCards() {
     // カードを一枚ずつ配置（ディールアニメーション）
     drawnCards.forEach((cardData, index) => {
         // カード表面の画像パスを生成
-        const imagePath = `card/${cardData.number}.png`; // 例: card/0.png
-
+        const imagePath = `card/${cardData.number}.jpg`; // 例: card/0.jpg
         const cardContainer = document.createElement('div');
         cardContainer.className = 'card-container';
         cardContainer.dataset.index = index;

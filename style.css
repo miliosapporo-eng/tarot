@@ -129,7 +129,7 @@ button[disabled] {
 
 .card-back {
     /* グラデーションや色指定を削除し、画像を使用 */
-    background-image: url('card/back.png'); /* <--- ここを修正 */
+    background-image: url('card/back.jpg'); /* <--- ここを修正 */
     background-size: cover;
     background-position: center;
     border: none; /* 画像を使うならボーダーは不要かもしれません */

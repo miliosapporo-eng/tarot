@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mystic Tarot Reader</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Import Miltonian font */
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Miltonian&family=Zen+Maru+Gothic:wght@300;700&display=swap');
 
         :root {
@@ -31,10 +30,12 @@
             color: #e2e8f0;
             font-family: 'Zen Maru Gothic', sans-serif;
             overflow: hidden;
-            height: 100vh;
+            /* Fix viewport height for mobile */
+            height: 100vh; 
+            height: 100dvh;
             display: flex;
             flex-direction: column;
-            touch-action: none;
+            /* Removed global touch-action: none to restore native controls */
         }
 
         /* UI Elements */
@@ -44,7 +45,7 @@
         }
 
         .mystic-text {
-            font-family: 'Miltonian', cursive; /* Updated Font */
+            font-family: 'Miltonian', cursive;
             color: var(--gold);
             text-shadow: 0 0 5px var(--gold);
         }
@@ -60,6 +61,7 @@
             opacity: 0;
             z-index: 10;
             pointer-events: auto;
+            touch-action: none; /* Only disable browser touch actions on the card itself */
         }
         
         .card-scene:active {
@@ -70,10 +72,6 @@
             transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        .card-scene:hover {
-            filter: brightness(1.1);
-        }
-
         .card-obj {
             width: 100%;
             height: 100%;
@@ -82,7 +80,7 @@
             transition: transform 0.8s;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            pointer-events: none;
+            pointer-events: none; /* Let clicks pass to card-scene */
         }
 
         .card-face {
@@ -135,6 +133,7 @@
             width: 100%;
             perspective: 1200px;
             overflow: hidden;
+            z-index: 1; /* Low z-index */
         }
 
         /* Shuffle Animation */
@@ -186,13 +185,13 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 80%;
-            pointer-events: none;
+            height: 100%; /* Cover full main area */
+            pointer-events: none; /* Crucial: allow clicks to pass through empty space */
             z-index: 20;
         }
         
         .card-number {
-            font-family: 'Cinzel'; /* Keep numbers in Cinzel or change to Miltonian if preferred */
+            font-family: 'Cinzel';
             font-size: 1.5rem;
             color: #333;
             font-weight: bold;
@@ -236,7 +235,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 999;
+            z-index: 9999; /* Highest priority */
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
@@ -284,33 +283,6 @@
             display: none;
         }
 
-        /* Notification Toast */
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-col: column;
-            gap: 10px;
-        }
-        .toast {
-            background: rgba(30, 41, 59, 0.9);
-            border-left: 4px solid var(--gold);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 4px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
         /* Share Image Preview Mock */
         .share-preview {
             background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
@@ -341,21 +313,29 @@
             background-color: #41C9B4;
         }
 
+        /* Truncate text logic */
+        .truncate-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
     </style>
 </head>
 <body>
 
     <!-- Header / Menu -->
-    <header class="h-16 bg-black/50 backdrop-blur-md border-b border-gray-800 flex items-center px-4 z-50 relative">
-        <!-- Topic Display (When Logged In) -->
-        <div id="topic-display" class="absolute left-4 top-1/2 -translate-y-1/2 hidden md:block opacity-0 transition-opacity duration-500 text-yellow-500 font-bold text-sm bg-black/40 px-3 py-1 rounded-full border border-yellow-800 z-20">
-            <span class="text-xs text-gray-400 mr-2">THEME:</span>
-            <span id="topic-text-content"></span>
+    <!-- z-index boosted to 100 to stay above everything -->
+    <header class="h-16 shrink-0 bg-black/50 backdrop-blur-md border-b border-gray-800 flex items-center px-4 z-[100] relative">
+        <!-- Topic Display (Desktop: Left side) -->
+        <div id="topic-display-desktop" class="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex items-center opacity-0 transition-opacity duration-500 text-yellow-500 font-bold text-sm bg-black/40 px-3 py-1 rounded-full border border-yellow-800 z-20 max-w-[300px]">
+            <span class="text-xs text-gray-400 mr-2 shrink-0">THEME:</span>
+            <span id="topic-text-content-desktop" class="truncate-text"></span>
         </div>
 
         <!-- App Title: Centered Absolutely -->
-        <!-- Added pointer-events-none to prevent blocking clicks if it overlaps with side elements on small screens -->
-        <h1 id="app-title" class="mystic-text text-xl md:text-3xl font-bold tracking-widest absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none">
+        <h1 id="app-title" class="mystic-text text-xl md:text-3xl font-bold tracking-widest absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[60%] text-center pointer-events-none truncate">
             TAROT MYSTERY
         </h1>
         
@@ -370,6 +350,14 @@
     <!-- Main Table Area -->
     <main id="table-top" class="relative">
         
+        <!-- Mobile Topic Display (Top of main area) -->
+        <div id="topic-display-mobile" class="absolute top-2 left-1/2 transform -translate-x-1/2 w-[90%] md:hidden z-30 opacity-0 transition-opacity duration-500 pointer-events-none">
+            <div class="bg-black/60 backdrop-blur-sm border border-yellow-800 rounded-full px-3 py-1 flex items-center justify-center">
+                <span class="text-[10px] text-gray-400 mr-2 shrink-0">THEME:</span>
+                <span id="topic-text-content-mobile" class="text-yellow-500 text-xs font-bold truncate-text"></span>
+            </div>
+        </div>
+
         <!-- Where settled cards land -->
         <div id="spread-layer"></div>
         
@@ -377,6 +365,7 @@
         <div id="shuffle-layer" class="absolute inset-0 z-1 pointer-events-none overflow-hidden"></div>
 
         <!-- Shuffle/Deck Area (Bottom Center) -->
+        <!-- z-index lowered to 40, above spread layer but below controls -->
         <div id="deck-area" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-44 flex justify-center items-center z-40">
             <!-- The visual stack of cards -->
             <div id="deck-stack" class="relative w-full h-full cursor-pointer group">
@@ -396,17 +385,18 @@
         </div>
 
         <!-- Guide Character & Bubble (Bottom Right) -->
-        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-4 flex flex-col items-end pointer-events-none max-w-[50%] md:max-w-[30%]">
+        <!-- pointer-events-none allows clicking through to footer if overlap occurs -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[60%] md:max-w-[30%]">
             <!-- Speech Bubble -->
-            <div id="guide-bubble" class="bg-gray-900/90 text-yellow-100 p-4 rounded-2xl rounded-br-none mb-2 border border-yellow-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transform origin-bottom-right bubble-pop relative mr-8">
-                <p id="guide-text" class="font-bold text-sm md:text-base min-h-[1.5em] typing-cursor"></p>
+            <div id="guide-bubble" class="bg-gray-900/90 text-yellow-100 p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border border-yellow-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transform origin-bottom-right bubble-pop relative mr-8">
+                <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor"></p>
                 <!-- Tail -->
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-gray-900/90 border-r border-b border-yellow-700 transform rotate-45"></div>
             </div>
             
             <!-- Character Image -->
-            <div class="w-20 h-20 md:w-28 md:h-28 bg-indigo-950 rounded-full border-2 border-yellow-600 overflow-hidden shadow-2xl relative mr-2">
-                 <img src="images/seer.jpg" onerror="this.src='https://placehold.co/150x150/1e1b4b/d4af37?text=Fortune+Teller'" class="w-full h-full object-cover opacity-90">
+            <div class="w-16 h-16 md:w-28 md:h-28 bg-indigo-950 rounded-full border-2 border-yellow-600 overflow-hidden shadow-2xl relative mr-1 md:mr-2">
+                 <img src="images/seer.jpg" onerror="this.src='https://placehold.co/150x150/1e1b4b/d4af37?text=Seer'" class="w-full h-full object-cover opacity-90">
             </div>
         </div>
         
@@ -527,10 +517,11 @@
     </main>
 
     <!-- Control Footer -->
-    <footer class="min-h-[5rem] py-2 bg-black/80 backdrop-blur-md flex flex-wrap justify-center items-center gap-4 border-t border-gray-800 z-50">
+    <!-- z-index boosted to 100 -->
+    <footer class="min-h-[5rem] shrink-0 py-2 bg-black/80 backdrop-blur-md flex flex-wrap justify-center items-center gap-2 md:gap-4 border-t border-gray-800 z-[100] relative">
         
         <div class="relative group">
-            <select id="spread-select" class="bg-gray-900 text-yellow-500 border-2 border-yellow-700 text-lg font-bold rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block px-4 py-3 shadow-[0_0_15px_rgba(212,175,55,0.2)] appearance-none cursor-pointer hover:bg-gray-800 transition-colors">
+            <select id="spread-select" class="bg-gray-900 text-yellow-500 border-2 border-yellow-700 text-sm md:text-lg font-bold rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block px-2 md:px-4 py-2 md:py-3 shadow-[0_0_15px_rgba(212,175,55,0.2)] appearance-none cursor-pointer hover:bg-gray-800 transition-colors w-32 md:w-auto truncate">
                 <option value="one_oracle">ワンオラクル (1枚)</option>
                 <option value="two_oracle">ツーオラクル (2枚)</option>
                 <option value="two_mind">ツーマインド (2枚)</option>
@@ -546,24 +537,25 @@
                 <option value="horoscope" class="text-gray-500">🔒 ホロスコープ (13枚)</option>
             </select>
             <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 md:w-5 md:h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
         </div>
 
-        <button id="btn-shuffle" class="px-8 py-3 bg-yellow-900/50 hover:bg-yellow-700 text-yellow-100 border border-yellow-600 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] disabled:opacity-30 disabled:cursor-not-allowed">
+        <button id="btn-shuffle" class="px-4 md:px-8 py-2 md:py-3 bg-yellow-900/50 hover:bg-yellow-700 text-yellow-100 border border-yellow-600 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] disabled:opacity-30 disabled:cursor-not-allowed text-xs md:text-base">
             SHUFFLE
         </button>
 
-        <button id="btn-open" class="px-8 py-3 bg-indigo-900/50 hover:bg-indigo-700 text-indigo-100 border border-indigo-500 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+        <button id="btn-open" class="px-4 md:px-8 py-2 md:py-3 bg-indigo-900/50 hover:bg-indigo-700 text-indigo-100 border border-indigo-500 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-30 disabled:cursor-not-allowed text-xs md:text-base" disabled>
             OPEN
         </button>
 
-        <button id="btn-reset" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded-full text-sm transition-all">
+        <button id="btn-reset" class="px-4 md:px-6 py-2 md:py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded-full text-xs md:text-sm transition-all">
             AGAIN
         </button>
 
-        <button id="btn-share" class="px-6 py-3 bg-pink-900/50 hover:bg-pink-700 text-pink-100 border border-pink-500 rounded-full text-sm transition-all hidden">
-            SHARE <i class="fa-solid fa-share-nodes ml-1"></i>
+        <button id="btn-share" class="px-4 md:px-6 py-2 md:py-3 bg-pink-900/50 hover:bg-pink-700 text-pink-100 border border-pink-500 rounded-full text-xs md:text-sm transition-all hidden flex items-center gap-1">
+            <span class="hidden md:inline">SHARE</span>
+            <i class="fa-solid fa-share-nodes text-lg md:text-base"></i>
         </button>
     </footer>
 
@@ -572,27 +564,11 @@
          * TAROT APP LOGIC
          */
 
-        // Positive Titles for Random Selection
         const POSITIVE_TITLES = [
-            "SERENDIPITY",
-            "ILLUMINATION",
-            "NEW HORIZON",
-            "INNER LIGHT",
-            "PURE JOY",
-            "DIVINE GRACE",
-            "INFINITE HOPE",
-            "SYNCHRONICITY",
-            "RADIANT SOUL",
-            "TRUE CALLING",
-            "HIDDEN GEM",
-            "COSMIC LOVE",
-            "ETERNAL PEACE",
-            "MAGIC MOMENT",
-            "SACRED PATH",
-            "AWAKENING",
-            "BLESSING",
-            "HARMONY",
-            "EPIPHANY"
+            "SERENDIPITY", "ILLUMINATION", "NEW HORIZON", "INNER LIGHT", "PURE JOY", 
+            "DIVINE GRACE", "INFINITE HOPE", "SYNCHRONICITY", "RADIANT SOUL", "TRUE CALLING", 
+            "HIDDEN GEM", "COSMIC LOVE", "ETERNAL PEACE", "MAGIC MOMENT", "SACRED PATH", 
+            "AWAKENING", "BLESSING", "HARMONY", "EPIPHANY"
         ];
 
         const TOTAL_CARDS = 78;
@@ -652,8 +628,11 @@
         const uiBtnShare = document.getElementById('btn-share');
         const uiGuideText = document.getElementById('guide-text'); 
         const uiGuideBubble = document.getElementById('guide-bubble');
-        const uiTopicDisplay = document.getElementById('topic-display');
-        const uiTopicTextContent = document.getElementById('topic-text-content');
+        
+        const uiTopicDisplayDesktop = document.getElementById('topic-display-desktop');
+        const uiTopicTextDesktop = document.getElementById('topic-text-content-desktop');
+        const uiTopicDisplayMobile = document.getElementById('topic-display-mobile');
+        const uiTopicTextMobile = document.getElementById('topic-text-content-mobile');
         
         const uiDeckArea = document.getElementById('deck-area');
         const uiDeckStack = document.getElementById('deck-stack');
@@ -662,7 +641,6 @@
         const uiShuffleLayer = document.getElementById('shuffle-layer');
         const uiHand = document.getElementById('hand-cursor');
         const uiTableTop = document.getElementById('table-top');
-        const uiToastContainer = document.getElementById('toast-container');
         
         // Modals
         const uiLoginModal = document.getElementById('login-modal');
@@ -688,7 +666,7 @@
         // --- Init ---
         function init() {
             populateDeck();
-            setRandomTitle(); // Set random title on init
+            setRandomTitle();
             
             uiSpreadSelect.addEventListener('change', (e) => {
                 const selected = e.target.value;
@@ -705,7 +683,6 @@
                 resetGame();
             });
 
-            // Login Logic
             const checkLogin = () => {
                 const inputId = uiInputId.value;
                 const inputPass = uiInputPass.value;
@@ -751,7 +728,6 @@
             
             uiBtnCloseLogin.addEventListener('click', () => hideModal(uiLoginModal));
 
-            // Topic Logic
             uiBtnSubmitTopic.addEventListener('click', () => {
                 const topic = uiInputTopic.value.trim();
                 currentTopic = topic || "未入力";
@@ -767,7 +743,6 @@
                 setStatus("テーマなしで占います。シャッフルを開始してください。");
             });
 
-            // Share Logic
             uiBtnShare.addEventListener('click', () => {
                 uiSharePreviewTopic.textContent = `Theme: ${currentTopic}`;
                 showModal(uiShareModal);
@@ -787,7 +762,6 @@
             uiBtnOpen.addEventListener('click', startReveal);
             uiBtnReset.addEventListener('click', resetGame);
 
-            // Global Drag Listeners
             document.addEventListener('mousemove', handleDragMove);
             document.addEventListener('touchmove', handleDragMove, {passive: false});
             document.addEventListener('mouseup', handleDragEnd);
@@ -796,7 +770,6 @@
             setStatus("スプレッドを選んで SHUFFLE を押してください (未ログイン: 2枚まで)");
         }
 
-        // --- Logic: Random Title ---
         function setRandomTitle() {
             const titleEl = document.getElementById('app-title');
             if(titleEl) {
@@ -813,26 +786,6 @@
             el.classList.remove('active');
         }
         
-        // Toast function preserved but not used automatically
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            
-            let icon = 'info-circle';
-            if (type === 'success') icon = 'check-circle';
-            
-            toast.innerHTML = `<i class="fa-solid fa-${icon} text-yellow-500"></i><span>${message}</span>`;
-            
-            uiToastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
         function updateLoginUI(loggedIn) {
             const options = uiSpreadSelect.querySelectorAll('option');
             options.forEach(opt => {
@@ -861,17 +814,27 @@
                 uiBtnLoginHeader.classList.replace('text-yellow-200', 'text-indigo-200');
                 uiBtnLoginHeader.classList.replace('border-yellow-500', 'border-indigo-500');
                 // Hide topic display on logout
-                uiTopicDisplay.style.opacity = '0';
+                uiTopicDisplayDesktop.style.opacity = '0';
+                uiTopicDisplayMobile.style.opacity = '0';
             }
         }
         
         function updateTopicUI() {
             if(isLoggedIn && currentTopic) {
-                uiTopicTextContent.textContent = currentTopic;
-                uiTopicDisplay.classList.remove('hidden');
-                setTimeout(() => uiTopicDisplay.style.opacity = '1', 100);
+                uiTopicTextDesktop.textContent = currentTopic;
+                uiTopicTextMobile.textContent = currentTopic;
+                
+                uiTopicDisplayDesktop.classList.remove('hidden');
+                uiTopicDisplayDesktop.classList.add('flex');
+                uiTopicDisplayMobile.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    uiTopicDisplayDesktop.style.opacity = '1';
+                    uiTopicDisplayMobile.style.opacity = '1';
+                }, 100);
             } else {
-                uiTopicDisplay.style.opacity = '0';
+                uiTopicDisplayDesktop.style.opacity = '0';
+                uiTopicDisplayMobile.style.opacity = '0';
             }
         }
 
@@ -884,16 +847,7 @@
 
         // --- Mock Backend Logic ---
         async function mockSaveAndNotify() {
-            // Visualize "Saving"
-            showToast("Googleドライブへ保存中...", "info");
-            
-            // Simulate delay
-            await new Promise(r => setTimeout(r, 1500));
-            
-            showToast("保存完了: My Drive/TarotResults", "success");
-            
-            await new Promise(r => setTimeout(r, 800));
-            showToast("result@design4qol.com に通知メールを送信しました", "success");
+            // Notification removed
         }
 
         // --- Shuffle Logic ---
@@ -906,7 +860,7 @@
             drawnCards = [];
             uiSpreadLayer.innerHTML = '';
             uiShuffleLayer.innerHTML = '';
-            uiBtnShare.classList.add('hidden'); // Hide share on restart
+            uiBtnShare.classList.add('hidden'); 
             
             uiDeckStack.classList.add('hidden');
 
@@ -1145,7 +1099,11 @@
 
             target.style.zIndex = 100;
             target.classList.remove('flying');
-            e.preventDefault();
+            
+            // Allow default for mouse, prevent for touch to stop scrolling ONLY when dragging card
+            if (e.type === 'touchstart') {
+                e.preventDefault();
+            }
         }
 
         function handleDragMove(e) {
@@ -1158,7 +1116,8 @@
             currentDragCard.style.left = `${initialLeft + dx}px`;
             currentDragCard.style.top = `${initialTop + dy}px`;
             
-            if(e.cancelable && e.type === 'touchmove') e.preventDefault();
+            // Prevent scroll while dragging
+            if(e.cancelable) e.preventDefault();
         }
 
         function handleDragEnd(e) {
@@ -1187,23 +1146,16 @@
                 currentState = 'FINISHED';
                 setStatus("リーディング完了。カードをドラッグして動かせます。AGAINでリセット");
                 
-                // Trigger Simulation: Save and Notify (If logged in, or always? Request implies it's a feature)
-                // Assuming feature is available for everyone or just logged in? 
-                // Let's do it for everyone but note the address.
-                if(isLoggedIn) {
-                   mockSaveAndNotify();
-                }
-
-                // Show Share Button
                 uiBtnShare.classList.remove('hidden');
+                uiBtnShare.classList.add('flex');
+
+                mockSaveAndNotify();
 
             }, delay);
         }
 
         function resetGame() {
-            // Trigger Topic Modal if Logged In
             if(isLoggedIn) {
-                // Clear inputs? Or keep previous? Let's clear for new session
                 uiInputTopic.value = "";
                 showModal(uiTopicModal);
             }
@@ -1220,8 +1172,8 @@
             uiHand.style.transform = 'translate(-50%, -50%) scale(0)';
             uiDeckStack.classList.remove('hidden');
             uiBtnShare.classList.add('hidden');
+            uiBtnShare.classList.remove('flex');
 
-            // If not logged in, set status directly. If logged in, Modal handles it.
             if(!isLoggedIn) {
                 setStatus("スプレッドを選んで SHUFFLE を押してください (未ログイン: 2枚まで)");
             }
@@ -1250,7 +1202,5 @@
     </script>
 </body>
 </html>
-
-
 
 

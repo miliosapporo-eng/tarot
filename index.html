@@ -3,39 +3,1253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>洗練されたタロットシャッフルシステム</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Mystic Tarot Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Import Miltonian font */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Miltonian&family=Zen+Maru+Gothic:wght@300;700&display=swap');
+
+        :root {
+            --card-width: 80px;
+            --card-height: 140px;
+            --gold: #d4af37;
+            --gold-glow: #fce288;
+            --bg-dark: #0f172a;
+        }
+
+        @media (min-width: 768px) {
+            :root {
+                --card-width: 100px;
+                --card-height: 174px;
+            }
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1a202c 0%, #000000 100%);
+            color: #e2e8f0;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+        }
+
+        /* UI Elements */
+        .gold-border {
+            border: 1px solid var(--gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .mystic-text {
+            font-family: 'Miltonian', cursive; /* Updated Font */
+            color: var(--gold);
+            text-shadow: 0 0 5px var(--gold);
+        }
+
+        /* Card Container & 3D Effect */
+        .card-scene {
+            width: var(--card-width);
+            height: var(--card-height);
+            perspective: 1000px;
+            position: absolute;
+            transform-style: preserve-3d;
+            cursor: grab;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        
+        .card-scene:active {
+            cursor: grabbing;
+        }
+
+        .card-scene.flying {
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .card-scene:hover {
+            filter: brightness(1.1);
+        }
+
+        .card-obj {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .card-face.front {
+            background: white;
+            transform: rotateY(180deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-face.back {
+            background: #2a2a2a;
+            background-image: repeating-linear-gradient(45deg, #2a2a2a 25%, #222 25%, #222 50%, #2a2a2a 50%, #2a2a2a 75%, #222 75%, #222 100%);
+            border: 2px solid var(--gold);
+        }
+        
+        .card-face.back img, .card-face.front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* States */
+        .card-scene.visible {
+            opacity: 1;
+        }
+
+        .card-obj.is-open:not(.reversed) {
+            transform: rotateY(180deg);
+        }
+        
+        .card-obj.is-open.reversed {
+            transform: rotateY(180deg) rotateZ(180deg);
+        }
+
+        /* Layout Areas */
+        #table-top {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            perspective: 1200px;
+            overflow: hidden;
+        }
+
+        /* Shuffle Animation */
+        .shuffle-hand {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--gold);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 0 30px var(--gold-glow);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .shuffle-hand::after {
+            content: "🖐";
+            font-size: 60px;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px var(--gold));
+        }
+
+        .shuffle-card {
+            position: absolute;
+            width: var(--card-width);
+            height: var(--card-height);
+            background: #2a2a2a;
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            z-index: 5;
+            will-change: transform, left, top;
+        }
+        .shuffle-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 7px;
+            opacity: 0.9;
+        }
+
+        #spread-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .card-number {
+            font-family: 'Cinzel'; /* Keep numbers in Cinzel or change to Miltonian if preferred */
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        #deck-stack {
+            transition: opacity 0.5s;
+        }
+        #deck-stack.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Guide Bubble */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .bubble-pop {
+            animation: popIn 0.3s ease-out forwards;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .common-modal {
+            background: #1e1b4b;
+            border: 2px solid var(--gold);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 90%;
+            width: 450px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(212,175,55,0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .common-modal {
+            transform: scale(1);
+        }
+        
+        .modal-input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #4f46e5;
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .modal-input:focus {
+            border-color: var(--gold);
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* Notification Toast */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-col: column;
+            gap: 10px;
+        }
+        .toast {
+            background: rgba(30, 41, 59, 0.9);
+            border-left: 4px solid var(--gold);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Share Image Preview Mock */
+        .share-preview {
+            background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
+            border: 2px solid var(--gold);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+        .share-preview::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIiBmaWxsLW9wYWNpdHk9IjAuMDUiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiLz48L3N2Zz4=');
+            opacity: 0.5;
+        }
+        
+        /* SNS Brand Colors */
+        .bg-instagram {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+        .bg-note {
+            background-color: #41C9B4;
+        }
+
+    </style>
 </head>
 <body>
 
-    <header>
-        <h1>Tarot Reading System</h1>
-    </header>
-
-    <main>
-        <div class="controls">
-            <label for="spread-select">スプレッド選択:</label>
-            <select id="spread-select">
-                <option value="1">ワンオラクル (1枚)</option>
-                <option value="3">スリーカード (3枚)</option>
-                <option value="5">ギリシャ十字 (5枚)</option>
-                <option value="10">ケルト十字 (10枚)</option>
-            </select>
-            <button id="shuffle-button">シャッフル＆準備</button>
-            <button id="draw-button" disabled>カードを引く</button>
+    <!-- Header / Menu -->
+    <header class="h-16 bg-black/50 backdrop-blur-md border-b border-gray-800 flex items-center px-4 z-50 relative">
+        <!-- Topic Display (When Logged In) -->
+        <div id="topic-display" class="absolute left-4 top-1/2 -translate-y-1/2 hidden md:block opacity-0 transition-opacity duration-500 text-yellow-500 font-bold text-sm bg-black/40 px-3 py-1 rounded-full border border-yellow-800 z-20">
+            <span class="text-xs text-gray-400 mr-2">THEME:</span>
+            <span id="topic-text-content"></span>
         </div>
 
-        <div id="status-message">スプレッドを選択し、「シャッフル＆準備」を押してください。</div>
+        <!-- App Title: Centered Absolutely -->
+        <!-- Added pointer-events-none to prevent blocking clicks if it overlaps with side elements on small screens -->
+        <h1 id="app-title" class="mystic-text text-xl md:text-3xl font-bold tracking-widest absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none">
+            TAROT MYSTERY
+        </h1>
+        
+        <!-- Login Button Area: Pushed to the right -->
+        <div class="ml-auto z-20">
+            <button id="btn-login-header" class="text-xs md:text-sm font-bold text-indigo-200 border border-indigo-500 px-3 py-1 rounded hover:bg-indigo-900 transition-colors">
+                LOGIN
+            </button>
+        </div>
+    </header>
 
-        <div id="card-area" class="card-area">
+    <!-- Main Table Area -->
+    <main id="table-top" class="relative">
+        
+        <!-- Where settled cards land -->
+        <div id="spread-layer"></div>
+        
+        <!-- Where loose shuffle cards move -->
+        <div id="shuffle-layer" class="absolute inset-0 z-1 pointer-events-none overflow-hidden"></div>
+
+        <!-- Shuffle/Deck Area (Bottom Center) -->
+        <div id="deck-area" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-44 flex justify-center items-center z-40">
+            <!-- The visual stack of cards -->
+            <div id="deck-stack" class="relative w-full h-full cursor-pointer group">
+                <div class="absolute inset-0 bg-yellow-500/10 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <!-- Back of card image rendered here by JS -->
+                <div id="deck-visual" class="w-[80px] h-[140px] md:w-[100px] md:h-[174px] bg-gray-800 rounded-lg border-2 border-yellow-700 shadow-2xl relative mx-auto">
+                    <img src="images/back.jpg" alt="Deck" class="w-full h-full object-cover rounded-lg opacity-80" onerror="this.src='https://placehold.co/100x174/330000/d4af37?text=TAROT';">
+                    <!-- Multiple layers for stack effect -->
+                    <div class="absolute top-1 left-1 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-10"></div>
+                    <div class="absolute top-2 left-2 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-20"></div>
+                    <div class="absolute top-3 left-3 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-30"></div>
+                </div>
             </div>
+            
+            <!-- Hand Animation Cursor -->
+            <div id="hand-cursor" class="shuffle-hand"></div>
+        </div>
+
+        <!-- Guide Character & Bubble (Bottom Right) -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-4 flex flex-col items-end pointer-events-none max-w-[50%] md:max-w-[30%]">
+            <!-- Speech Bubble -->
+            <div id="guide-bubble" class="bg-gray-900/90 text-yellow-100 p-4 rounded-2xl rounded-br-none mb-2 border border-yellow-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transform origin-bottom-right bubble-pop relative mr-8">
+                <p id="guide-text" class="font-bold text-sm md:text-base min-h-[1.5em] typing-cursor"></p>
+                <!-- Tail -->
+                <div class="absolute -bottom-2 right-0 w-4 h-4 bg-gray-900/90 border-r border-b border-yellow-700 transform rotate-45"></div>
+            </div>
+            
+            <!-- Character Image -->
+            <div class="w-20 h-20 md:w-28 md:h-28 bg-indigo-950 rounded-full border-2 border-yellow-600 overflow-hidden shadow-2xl relative mr-2">
+                 <img src="images/seer.jpg" onerror="this.src='https://placehold.co/150x150/1e1b4b/d4af37?text=Fortune+Teller'" class="w-full h-full object-cover opacity-90">
+            </div>
+        </div>
+        
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal-overlay">
+            <div class="common-modal login-modal">
+                <div class="text-4xl mb-4">🔐</div>
+                <h2 class="text-2xl font-bold text-indigo-300 mb-2 font-cinzel">Member Login</h2>
+                <p class="text-gray-300 mb-4 text-sm">
+                    合言葉を入力して、全ての運命を解放してください。<br>
+                    <span class="text-xs text-gray-500">(Demo: ID=admin / Pass=secret)</span>
+                </p>
+                
+                <div class="text-left">
+                    <input type="text" id="login-id" class="modal-input" placeholder="Login ID">
+                    <input type="password" id="login-pass" class="modal-input" placeholder="Password">
+                </div>
+
+                <div id="login-error" class="error-msg">IDまたはパスワードが違います</div>
+
+                <div class="flex flex-col gap-3">
+                    <button id="btn-submit-login" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                        認証する
+                    </button>
+                    <button id="btn-close-login" class="text-sm text-gray-500 hover:text-gray-300 underline">
+                        閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Topic Input Modal -->
+        <div id="topic-modal" class="modal-overlay">
+            <div class="common-modal">
+                <div class="text-4xl mb-4">🔮</div>
+                <h2 class="text-2xl font-bold text-yellow-500 mb-2 font-cinzel">Divination Theme</h2>
+                <p class="text-gray-300 mb-4 text-sm leading-relaxed">
+                    今回の占いのテーマを入力してください。<br>
+                    結果はMilioへ送信されます。<br>
+                    解説メールの返信をお待ちください。
+                </p>
+                
+                <div class="text-left">
+                    <input type="text" id="topic-input" class="modal-input" placeholder="例: 今後のキャリアについて">
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button id="btn-submit-topic" class="w-full py-3 bg-gradient-to-r from-yellow-700 to-yellow-500 hover:from-yellow-600 hover:to-yellow-400 text-black font-bold rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                        占いを開始する
+                    </button>
+                    <button id="btn-cancel-topic" class="text-sm text-gray-500 hover:text-gray-300 underline">
+                        入力せずに開始
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Modal -->
+        <div id="share-modal" class="modal-overlay">
+            <div class="common-modal">
+                <h2 class="text-2xl font-bold text-white mb-4 font-cinzel">Share Your Destiny</h2>
+                
+                <!-- Generated Image Mock -->
+                <div class="share-preview">
+                    <h3 class="text-yellow-500 font-bold mb-2">TAROT MYSTERY RESULT</h3>
+                    <p id="share-preview-topic" class="text-gray-300 text-sm mb-4 border-b border-gray-600 pb-2">Theme: 未入力</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-24 bg-gray-800 border border-yellow-600 rounded"></div>
+                        <div class="text-xs text-gray-400">
+                            The cards have spoken.<br>
+                            A new path reveals itself...
+                        </div>
+                    </div>
+                    <div class="absolute bottom-2 right-2 text-[10px] text-gray-600">design4qol.com</div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <!-- X (Twitter) -->
+                    <button title="X (Twitter)" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
+                        <i class="fa-brands fa-x-twitter text-white text-2xl"></i>
+                    </button>
+                    
+                    <!-- LINE -->
+                    <button title="LINE" class="p-3 bg-[#00C300] rounded-lg hover:bg-green-600 transition-colors flex justify-center items-center">
+                        <i class="fa-brands fa-line text-white text-2xl"></i>
+                    </button>
+
+                    <!-- Instagram -->
+                    <button title="Instagram" class="p-3 bg-instagram rounded-lg hover:opacity-90 transition-opacity flex justify-center items-center">
+                        <i class="fa-brands fa-instagram text-white text-2xl"></i>
+                    </button>
+                    
+                    <!-- TikTok -->
+                    <button title="TikTok" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
+                        <i class="fa-brands fa-tiktok text-white text-2xl"></i>
+                    </button>
+                    
+                    <!-- Threads -->
+                    <button title="Threads" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
+                        <i class="fa-brands fa-threads text-white text-2xl"></i>
+                    </button>
+                    
+                    <!-- note (Custom SVG) -->
+                    <button title="note" class="p-3 bg-note rounded-lg hover:opacity-90 transition-opacity flex justify-center items-center">
+                        <svg viewBox="0 0 500 500" class="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M43.75,43.75h412.5v412.5h-412.5z M250,93.75c-86.25,0-156.25,70-156.25,156.25s70,156.25,156.25,156.25s156.25-70,156.25-156.25s-70-156.25-156.25-156.25z M187.5,337.5l-62.5-62.5l25-25l37.5,37.5l100-100l25,25l-125,125z"/>
+                            <path d="M120 180 h 50 v 140 h -50 Z M 210 180 h 50 v 20 h 10 c 10 -20 40 -30 60 0 v 120 h -50 v -100 c 0 -10 -10 -20 -20 -20 s -20 10 -20 20 v 100 h -50 Z" fill="white"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <button id="btn-close-share" class="text-sm text-gray-500 hover:text-gray-300 underline">
+                    閉じる
+                </button>
+            </div>
+        </div>
 
     </main>
 
-    <footer>
-        <p>&copy; 2024 Refined Tarot System</p>
+    <!-- Control Footer -->
+    <footer class="min-h-[5rem] py-2 bg-black/80 backdrop-blur-md flex flex-wrap justify-center items-center gap-4 border-t border-gray-800 z-50">
+        
+        <div class="relative group">
+            <select id="spread-select" class="bg-gray-900 text-yellow-500 border-2 border-yellow-700 text-lg font-bold rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block px-4 py-3 shadow-[0_0_15px_rgba(212,175,55,0.2)] appearance-none cursor-pointer hover:bg-gray-800 transition-colors">
+                <option value="one_oracle">ワンオラクル (1枚)</option>
+                <option value="two_oracle">ツーオラクル (2枚)</option>
+                <option value="two_mind">ツーマインド (2枚)</option>
+                <option value="simple_cross">シンプルクロス (2枚)</option>
+                <option value="three_card" class="text-gray-500">🔒 スリーカード (3枚)</option>
+                <option value="golden_trin" class="text-gray-500">🔒 ゴールデントリン (3枚)</option>
+                <option value="four_card" class="text-gray-500">🔒 フォーカード (4枚)</option>
+                <option value="greek_cross" class="text-gray-500">🔒 ギリシャ十字 (5枚)</option>
+                <option value="pyramid" class="text-gray-500">🔒 ピラミッド (6枚)</option>
+                <option value="hexagram" class="text-gray-500">🔒 ヘキサグラム (7枚)</option>
+                <option value="two_choices" class="text-gray-500">🔒 二者択一 (7枚)</option>
+                <option value="celtic_cross" class="text-gray-500">🔒 ケルト十字 (10枚)</option>
+                <option value="horoscope" class="text-gray-500">🔒 ホロスコープ (13枚)</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+        </div>
+
+        <button id="btn-shuffle" class="px-8 py-3 bg-yellow-900/50 hover:bg-yellow-700 text-yellow-100 border border-yellow-600 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(212,175,55,0.3)] disabled:opacity-30 disabled:cursor-not-allowed">
+            SHUFFLE
+        </button>
+
+        <button id="btn-open" class="px-8 py-3 bg-indigo-900/50 hover:bg-indigo-700 text-indigo-100 border border-indigo-500 rounded-full font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+            OPEN
+        </button>
+
+        <button id="btn-reset" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded-full text-sm transition-all">
+            AGAIN
+        </button>
+
+        <button id="btn-share" class="px-6 py-3 bg-pink-900/50 hover:bg-pink-700 text-pink-100 border border-pink-500 rounded-full text-sm transition-all hidden">
+            SHARE <i class="fa-solid fa-share-nodes ml-1"></i>
+        </button>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        /**
+         * TAROT APP LOGIC
+         */
+
+        // Positive Titles for Random Selection
+        const POSITIVE_TITLES = [
+            "SERENDIPITY",
+            "ILLUMINATION",
+            "NEW HORIZON",
+            "INNER LIGHT",
+            "PURE JOY",
+            "DIVINE GRACE",
+            "INFINITE HOPE",
+            "SYNCHRONICITY",
+            "RADIANT SOUL",
+            "TRUE CALLING",
+            "HIDDEN GEM",
+            "COSMIC LOVE",
+            "ETERNAL PEACE",
+            "MAGIC MOMENT",
+            "SACRED PATH",
+            "AWAKENING",
+            "BLESSING",
+            "HARMONY",
+            "EPIPHANY"
+        ];
+
+        const TOTAL_CARDS = 78;
+        const SHUFFLE_CARD_COUNT = 40;
+        
+        const SPREAD_CONFIGS = {
+            'one_oracle': { count: 1, pos: [{x:50, y:50}] },
+            'two_oracle': { count: 2, pos: [{x:35, y:50}, {x:65, y:50}] },
+            'two_mind':   { count: 2, pos: [{x:50, y:30}, {x:50, y:70}] },
+            'simple_cross': { count: 2, pos: [{x:50, y:50}, {x:50, y:50, cross: true}] },
+            'three_card': { count: 3, pos: [{x:20, y:50}, {x:50, y:50}, {x:80, y:50}] },
+            'golden_trin': { count: 3, pos: [{x:50, y:20}, {x:25, y:70}, {x:75, y:70}] },
+            'four_card': { count: 4, pos: [{x:20, y:20}, {x:80, y:20}, {x:80, y:80}, {x:20, y:80}] },
+            'greek_cross': { count: 5, pos: [{x:20, y:50}, {x:80, y:50}, {x:50, y:20}, {x:50, y:80}, {x:50, y:50}] },
+            'pyramid': { count: 6, pos: [{x:50, y:20}, {x:40, y:50}, {x:60, y:50}, {x:30, y:80}, {x:50, y:80}, {x:70, y:80}] },
+            'hexagram': { count: 7, pos: [{x:50, y:15}, {x:75, y:30}, {x:75, y:70}, {x:50, y:85}, {x:25, y:70}, {x:25, y:30}, {x:50, y:50}] },
+            'two_choices': { count: 7, pos: [{x:20, y:70}, {x:30, y:40}, {x:40, y:10}, {x:80, y:70}, {x:70, y:40}, {x:60, y:10}, {x:50, y:50}] },
+            'celtic_cross': { count: 10, pos: [
+                {x:30, y:50}, {x:30, y:50, rot:90, offset:true}, 
+                {x:30, y:15}, {x:30, y:85}, {x:10, y:50}, {x:50, y:50}, 
+                {x:80, y:85}, {x:80, y:65}, {x:80, y:45}, {x:80, y:25}
+            ]},
+            'horoscope': { count: 13, pos: [
+                {x:70, y:50}, {x:65, y:70}, {x:50, y:80}, {x:35, y:70}, 
+                {x:30, y:50}, {x:35, y:30}, {x:50, y:20}, {x:65, y:30}, 
+                {x:80, y:30}, {x:85, y:50}, {x:80, y:70}, {x:50, y:95}, 
+                {x:50, y:50} 
+            ]}
+        };
+        
+        const VALID_ID = "admin";
+        const VALID_PASS = "secret";
+
+        let deck = [];
+        let drawnCards = [];
+        let currentSpread = 'one_oracle';
+        let currentState = 'IDLE'; 
+        let pickCount = 0;
+        let shuffleAnimFrameId;
+        let shuffleCardElements = []; 
+        let typeInterval; 
+        
+        let isLoggedIn = false;
+        let lastValidSpread = 'one_oracle';
+        let currentTopic = "";
+
+        let isDragging = false;
+        let startX, startY;
+        let initialLeft, initialTop;
+        let currentDragCard = null;
+
+        // --- DOM Elements ---
+        const uiSpreadSelect = document.getElementById('spread-select');
+        const uiBtnShuffle = document.getElementById('btn-shuffle');
+        const uiBtnOpen = document.getElementById('btn-open');
+        const uiBtnReset = document.getElementById('btn-reset');
+        const uiBtnShare = document.getElementById('btn-share');
+        const uiGuideText = document.getElementById('guide-text'); 
+        const uiGuideBubble = document.getElementById('guide-bubble');
+        const uiTopicDisplay = document.getElementById('topic-display');
+        const uiTopicTextContent = document.getElementById('topic-text-content');
+        
+        const uiDeckArea = document.getElementById('deck-area');
+        const uiDeckStack = document.getElementById('deck-stack');
+        const uiDeckVisual = document.getElementById('deck-visual');
+        const uiSpreadLayer = document.getElementById('spread-layer');
+        const uiShuffleLayer = document.getElementById('shuffle-layer');
+        const uiHand = document.getElementById('hand-cursor');
+        const uiTableTop = document.getElementById('table-top');
+        const uiToastContainer = document.getElementById('toast-container');
+        
+        // Modals
+        const uiLoginModal = document.getElementById('login-modal');
+        const uiTopicModal = document.getElementById('topic-modal');
+        const uiShareModal = document.getElementById('share-modal');
+        
+        const uiInputId = document.getElementById('login-id');
+        const uiInputPass = document.getElementById('login-pass');
+        const uiInputTopic = document.getElementById('topic-input');
+        
+        const uiBtnSubmitLogin = document.getElementById('btn-submit-login');
+        const uiBtnCloseLogin = document.getElementById('btn-close-login');
+        const uiLoginError = document.getElementById('login-error');
+        const uiBtnLoginHeader = document.getElementById('btn-login-header');
+        
+        const uiBtnSubmitTopic = document.getElementById('btn-submit-topic');
+        const uiBtnCancelTopic = document.getElementById('btn-cancel-topic');
+        
+        const uiBtnCloseShare = document.getElementById('btn-close-share');
+        const uiSharePreviewTopic = document.getElementById('share-preview-topic');
+
+
+        // --- Init ---
+        function init() {
+            populateDeck();
+            setRandomTitle(); // Set random title on init
+            
+            uiSpreadSelect.addEventListener('change', (e) => {
+                const selected = e.target.value;
+                const config = SPREAD_CONFIGS[selected];
+                
+                if(config.count > 2 && !isLoggedIn) {
+                    showModal(uiLoginModal);
+                    uiSpreadSelect.value = lastValidSpread;
+                    return;
+                }
+                
+                lastValidSpread = selected;
+                currentSpread = selected;
+                resetGame();
+            });
+
+            // Login Logic
+            const checkLogin = () => {
+                const inputId = uiInputId.value;
+                const inputPass = uiInputPass.value;
+                
+                if (inputId === VALID_ID && inputPass === VALID_PASS) {
+                    isLoggedIn = true;
+                    hideModal(uiLoginModal);
+                    updateLoginUI(true);
+                    setStatus("認証成功。全ての運命が解放されました。");
+                    uiLoginError.style.display = 'none';
+                    uiInputId.value = '';
+                    uiInputPass.value = '';
+                } else {
+                    uiLoginError.style.display = 'block';
+                }
+            };
+            
+            const handleLogout = () => {
+                if(confirm("ログアウトしますか？")) {
+                    isLoggedIn = false;
+                    updateLoginUI(false);
+                    setStatus("ログアウトしました。");
+                    
+                    if(SPREAD_CONFIGS[currentSpread].count > 2) {
+                        currentSpread = 'one_oracle';
+                        lastValidSpread = 'one_oracle';
+                        uiSpreadSelect.value = 'one_oracle';
+                        resetGame();
+                    }
+                }
+            };
+
+            uiBtnSubmitLogin.addEventListener('click', checkLogin);
+            
+            uiBtnLoginHeader.addEventListener('click', () => {
+                if(isLoggedIn) {
+                    handleLogout();
+                } else {
+                    showModal(uiLoginModal);
+                    uiLoginError.style.display = 'none';
+                }
+            });
+            
+            uiBtnCloseLogin.addEventListener('click', () => hideModal(uiLoginModal));
+
+            // Topic Logic
+            uiBtnSubmitTopic.addEventListener('click', () => {
+                const topic = uiInputTopic.value.trim();
+                currentTopic = topic || "未入力";
+                hideModal(uiTopicModal);
+                updateTopicUI();
+                setStatus(`テーマ:「${currentTopic}」で占います。シャッフルを開始してください。`);
+            });
+            
+            uiBtnCancelTopic.addEventListener('click', () => {
+                currentTopic = "未入力";
+                hideModal(uiTopicModal);
+                updateTopicUI();
+                setStatus("テーマなしで占います。シャッフルを開始してください。");
+            });
+
+            // Share Logic
+            uiBtnShare.addEventListener('click', () => {
+                uiSharePreviewTopic.textContent = `Theme: ${currentTopic}`;
+                showModal(uiShareModal);
+            });
+            uiBtnCloseShare.addEventListener('click', () => hideModal(uiShareModal));
+
+
+            uiBtnShuffle.addEventListener('click', startShuffle);
+            
+            uiDeckArea.addEventListener('click', handleDeckInteraction);
+            uiTableTop.addEventListener('click', (e) => {
+                if(currentState === 'SHUFFLING') {
+                    handleDeckInteraction();
+                }
+            });
+
+            uiBtnOpen.addEventListener('click', startReveal);
+            uiBtnReset.addEventListener('click', resetGame);
+
+            // Global Drag Listeners
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('touchmove', handleDragMove, {passive: false});
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchend', handleDragEnd);
+
+            setStatus("スプレッドを選んで SHUFFLE を押してください (未ログイン: 2枚まで)");
+        }
+
+        // --- Logic: Random Title ---
+        function setRandomTitle() {
+            const titleEl = document.getElementById('app-title');
+            if(titleEl) {
+                const randomTitle = POSITIVE_TITLES[Math.floor(Math.random() * POSITIVE_TITLES.length)];
+                titleEl.innerText = randomTitle;
+            }
+        }
+
+        function showModal(el) {
+            el.classList.add('active');
+        }
+
+        function hideModal(el) {
+            el.classList.remove('active');
+        }
+        
+        // Toast function preserved but not used automatically
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            
+            toast.innerHTML = `<i class="fa-solid fa-${icon} text-yellow-500"></i><span>${message}</span>`;
+            
+            uiToastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function updateLoginUI(loggedIn) {
+            const options = uiSpreadSelect.querySelectorAll('option');
+            options.forEach(opt => {
+                const val = opt.value;
+                const count = SPREAD_CONFIGS[val].count;
+                
+                if(loggedIn) {
+                    opt.classList.remove('text-gray-500');
+                    opt.textContent = opt.textContent.replace('🔒 ', '');
+                } else {
+                    if(count > 2) {
+                        opt.classList.add('text-gray-500');
+                        if(!opt.textContent.includes('🔒')) {
+                            opt.textContent = '🔒 ' + opt.textContent;
+                        }
+                    }
+                }
+            });
+            
+            if(loggedIn) {
+                uiBtnLoginHeader.textContent = "LOGOUT";
+                uiBtnLoginHeader.classList.replace('text-indigo-200', 'text-yellow-200');
+                uiBtnLoginHeader.classList.replace('border-indigo-500', 'border-yellow-500');
+            } else {
+                uiBtnLoginHeader.textContent = "LOGIN";
+                uiBtnLoginHeader.classList.replace('text-yellow-200', 'text-indigo-200');
+                uiBtnLoginHeader.classList.replace('border-yellow-500', 'border-indigo-500');
+                // Hide topic display on logout
+                uiTopicDisplay.style.opacity = '0';
+            }
+        }
+        
+        function updateTopicUI() {
+            if(isLoggedIn && currentTopic) {
+                uiTopicTextContent.textContent = currentTopic;
+                uiTopicDisplay.classList.remove('hidden');
+                setTimeout(() => uiTopicDisplay.style.opacity = '1', 100);
+            } else {
+                uiTopicDisplay.style.opacity = '0';
+            }
+        }
+
+        function populateDeck() {
+            deck = [];
+            for(let i=0; i<=TOTAL_CARDS-1; i++) {
+                deck.push(i);
+            }
+        }
+
+        // --- Mock Backend Logic ---
+        async function mockSaveAndNotify() {
+            // Visualize "Saving"
+            showToast("Googleドライブへ保存中...", "info");
+            
+            // Simulate delay
+            await new Promise(r => setTimeout(r, 1500));
+            
+            showToast("保存完了: My Drive/TarotResults", "success");
+            
+            await new Promise(r => setTimeout(r, 800));
+            showToast("result@design4qol.com に通知メールを送信しました", "success");
+        }
+
+        // --- Shuffle Logic ---
+
+        function startShuffle() {
+            if (currentState !== 'IDLE' && currentState !== 'FINISHED') return;
+            
+            currentState = 'SHUFFLING';
+            pickCount = 0;
+            drawnCards = [];
+            uiSpreadLayer.innerHTML = '';
+            uiShuffleLayer.innerHTML = '';
+            uiBtnShare.classList.add('hidden'); // Hide share on restart
+            
+            uiDeckStack.classList.add('hidden');
+
+            createShuffleCards();
+            
+            uiBtnShuffle.disabled = true;
+            uiBtnOpen.disabled = true;
+            uiSpreadSelect.disabled = true;
+            
+            setStatus("クリックしてストップ！");
+
+            animateShuffleLoop();
+        }
+
+        function createShuffleCards() {
+            shuffleCardElements = [];
+            const rect = uiTableTop.getBoundingClientRect();
+            const startCX = rect.width / 2;
+            const startCY = rect.height - 100;
+
+            for(let i=0; i<SHUFFLE_CARD_COUNT; i++) {
+                const el = document.createElement('div');
+                el.className = 'shuffle-card';
+                el.innerHTML = `<img src="images/back.jpg" onerror="this.src='https://placehold.co/100x174/2a2a2a/d4af37?text=';">`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 200;
+                
+                const cardState = {
+                    el: el,
+                    x: startCX + Math.cos(angle) * dist - 50,
+                    y: startCY + Math.sin(angle) * dist - 87,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    rot: Math.random() * 360,
+                    vrot: (Math.random() - 0.5) * 20
+                };
+                
+                el.style.transform = `translate(${cardState.x}px, ${cardState.y}px) rotate(${cardState.rot}deg)`;
+                
+                uiShuffleLayer.appendChild(el);
+                shuffleCardElements.push(cardState);
+            }
+        }
+
+        function animateShuffleLoop() {
+            if(currentState !== 'SHUFFLING') return;
+
+            const rect = uiTableTop.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height;
+            const handRect = uiHand.getBoundingClientRect();
+
+            const time = Date.now() * 0.005;
+            const handX = (w/2) + Math.cos(time) * 100;
+            const handY = (h/2) + Math.sin(time) * 50;
+            
+            uiHand.style.transform = `translate(${handX}px, ${handY}px) scale(1)`;
+
+            shuffleCardElements.forEach(c => {
+                c.x += c.vx;
+                c.y += c.vy;
+                c.rot += c.vrot;
+
+                if(c.x < 0 || c.x > w - 80) { c.vx *= -1; c.x = Math.max(0, Math.min(c.x, w-80)); }
+                if(c.y < 0 || c.y > h - 140) { c.vy *= -1; c.y = Math.max(0, Math.min(c.y, h-140)); }
+
+                if(Math.random() < 0.05) {
+                    c.vx += (Math.random() - 0.5) * 5;
+                    c.vy += (Math.random() - 0.5) * 5;
+                }
+                
+                const dx = c.x + 40 - handX;
+                const dy = c.y + 70 - handY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 150) {
+                    c.vx += (dx / dist) * 2;
+                    c.vy += (dy / dist) * 2;
+                }
+
+                const speed = Math.sqrt(c.vx*c.vx + c.vy*c.vy);
+                if(speed > 20) { c.vx *= 0.9; c.vy *= 0.9; }
+
+                c.el.style.transform = `translate(${c.x}px, ${c.y}px) rotate(${c.rot}deg)`;
+            });
+
+            shuffleAnimFrameId = requestAnimationFrame(animateShuffleLoop);
+        }
+
+        function handleDeckInteraction(e) {
+            if(e) e.stopPropagation();
+
+            if (currentState === 'SHUFFLING') {
+                stopShuffleAndGather();
+            } else if (currentState === 'STOPPED' || currentState === 'PICKING') {
+                pickCard();
+            }
+        }
+
+        function stopShuffleAndGather() {
+            currentState = 'GATHERING';
+            cancelAnimationFrame(shuffleAnimFrameId);
+            setStatus("運命が収束します...");
+
+            const deckRect = uiDeckArea.getBoundingClientRect();
+            const tableRect = uiTableTop.getBoundingClientRect();
+            
+            const targetX = (tableRect.width / 2) - 40;
+            const targetY = tableRect.height - 180;
+
+            let completed = 0;
+            
+            shuffleCardElements.forEach((c, idx) => {
+                c.el.style.transition = `all 0.5s ease-out ${idx * 0.01}s`;
+                c.el.style.transform = `translate(${targetX}px, ${targetY}px) rotate(0deg)`;
+                
+                setTimeout(() => {
+                    c.el.style.opacity = 0;
+                }, 500 + (idx*10));
+            });
+
+            setTimeout(() => {
+                uiShuffleLayer.innerHTML = '';
+                uiDeckStack.classList.remove('hidden');
+                currentState = 'STOPPED';
+                
+                uiHand.style.transition = "all 0.5s";
+                uiHand.style.transform = `translate(${tableRect.width/2}px, ${tableRect.height-100}px) scale(1)`; 
+                
+                setStatus("もう一度クリックして運命のカードを引く");
+            }, 1000);
+        }
+
+        // --- Pick & Reveal Logic ---
+
+        function pickCard() {
+            const spreadData = SPREAD_CONFIGS[currentSpread];
+            if (pickCount >= spreadData.count) return;
+
+            currentState = 'PICKING';
+
+            if (deck.length === 0) populateDeck(); 
+            const randomIndex = Math.floor(Math.random() * deck.length);
+            const cardId = deck[randomIndex];
+            deck.splice(randomIndex, 1);
+            const isReversed = Math.random() < 0.5;
+
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card-scene flying';
+            cardEl.innerHTML = `
+                <div class="card-obj ${isReversed ? 'reversed' : ''}">
+                    <div class="card-face front">
+                        <img src="images/${cardId}.jpg" onerror="this.onerror=null; this.parentNode.innerHTML='<div class=\\'card-number\\'>${cardId}</div>';">
+                    </div>
+                    <div class="card-face back">
+                        <img src="images/back.jpg" onerror="this.src='https://placehold.co/100x174/2a2a2a/d4af37?text=TAROT';">
+                    </div>
+                </div>
+            `;
+            
+            cardEl.addEventListener('mousedown', handleDragStart);
+            cardEl.addEventListener('touchstart', handleDragStart, {passive: false});
+
+            uiSpreadLayer.appendChild(cardEl);
+            drawnCards.push({ id: cardId, reversed: isReversed, el: cardEl });
+
+            const targetPos = spreadData.pos[pickCount];
+            animateFly(cardEl, targetPos);
+
+            pickCount++;
+
+            uiHand.style.transform = uiHand.style.transform.replace('scale(1)', 'scale(0.8)');
+            setTimeout(() => uiHand.style.transform = uiHand.style.transform.replace('scale(0.8)', 'scale(1)'), 150);
+
+            if (pickCount < spreadData.count) {
+                setStatus(`${pickCount + 1}枚目を引いてください。`);
+                
+                setTimeout(() => {
+                    startShuffle();
+                }, 1000);
+            } else {
+                currentState = 'READY';
+                setStatus("全てのカードが揃いました。OPENボタンを押してください");
+                uiHand.style.transform = 'translate(-50%, -50%) scale(0)';
+                uiBtnOpen.disabled = false;
+                uiDeckStack.classList.remove('hidden');
+            }
+        }
+
+        function animateFly(cardEl, posConfig) {
+            const deckRect = uiDeckVisual.getBoundingClientRect();
+            const spreadLayerRect = uiSpreadLayer.getBoundingClientRect();
+            const startX = deckRect.left - spreadLayerRect.left;
+            const startY = deckRect.top - spreadLayerRect.top;
+
+            cardEl.style.left = `${startX}px`;
+            cardEl.style.top = `${startY}px`;
+            cardEl.style.opacity = '1';
+            cardEl.offsetHeight;
+
+            const cardW = cardEl.offsetWidth;
+            const cardH = cardEl.offsetHeight;
+            const targetX = (spreadLayerRect.width * (posConfig.x / 100)) - (cardW / 2);
+            const targetY = (spreadLayerRect.height * (posConfig.y / 100)) - (cardH / 2);
+
+            requestAnimationFrame(() => {
+                cardEl.style.left = `${targetX}px`;
+                cardEl.style.top = `${targetY}px`;
+                let rotation = 0;
+                if(posConfig.rot) rotation = posConfig.rot;
+                if(posConfig.cross) rotation = 90;
+                cardEl.style.transform = `rotate(${rotation}deg)`;
+                
+                setTimeout(() => {
+                    cardEl.classList.remove('flying');
+                }, 800);
+            });
+        }
+        
+        // --- Drag Implementation ---
+        function handleDragStart(e) {
+            if (currentState !== 'FINISHED') return;
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+            const target = e.currentTarget;
+
+            isDragging = true;
+            currentDragCard = target;
+
+            initialLeft = parseFloat(target.style.left || 0);
+            initialTop = parseFloat(target.style.top || 0);
+
+            startX = evt.clientX;
+            startY = evt.clientY;
+
+            target.style.zIndex = 100;
+            target.classList.remove('flying');
+            e.preventDefault();
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !currentDragCard) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+            const dx = evt.clientX - startX;
+            const dy = evt.clientY - startY;
+
+            currentDragCard.style.left = `${initialLeft + dx}px`;
+            currentDragCard.style.top = `${initialTop + dy}px`;
+            
+            if(e.cancelable && e.type === 'touchmove') e.preventDefault();
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            if(currentDragCard) currentDragCard.style.zIndex = 50; 
+            isDragging = false;
+            currentDragCard = null;
+        }
+
+        function startReveal() {
+            if (currentState !== 'READY') return;
+            currentState = 'OPENING';
+            uiBtnOpen.disabled = true;
+            setStatus("運命が明かされます...");
+
+            let delay = 0;
+            drawnCards.forEach((card) => {
+                setTimeout(() => {
+                    const obj = card.el.querySelector('.card-obj');
+                    obj.classList.add('is-open');
+                }, delay);
+                delay += 800;
+            });
+
+            setTimeout(() => {
+                currentState = 'FINISHED';
+                setStatus("リーディング完了。カードをドラッグして動かせます。AGAINでリセット");
+                
+                // Trigger Simulation: Save and Notify (If logged in, or always? Request implies it's a feature)
+                // Assuming feature is available for everyone or just logged in? 
+                // Let's do it for everyone but note the address.
+                if(isLoggedIn) {
+                   mockSaveAndNotify();
+                }
+
+                // Show Share Button
+                uiBtnShare.classList.remove('hidden');
+
+            }, delay);
+        }
+
+        function resetGame() {
+            // Trigger Topic Modal if Logged In
+            if(isLoggedIn) {
+                // Clear inputs? Or keep previous? Let's clear for new session
+                uiInputTopic.value = "";
+                showModal(uiTopicModal);
+            }
+
+            uiSpreadLayer.innerHTML = '';
+            uiShuffleLayer.innerHTML = '';
+            drawnCards = [];
+            currentState = 'IDLE';
+            populateDeck();
+
+            uiBtnShuffle.disabled = false;
+            uiBtnOpen.disabled = true;
+            uiSpreadSelect.disabled = false;
+            uiHand.style.transform = 'translate(-50%, -50%) scale(0)';
+            uiDeckStack.classList.remove('hidden');
+            uiBtnShare.classList.add('hidden');
+
+            // If not logged in, set status directly. If logged in, Modal handles it.
+            if(!isLoggedIn) {
+                setStatus("スプレッドを選んで SHUFFLE を押してください (未ログイン: 2枚まで)");
+            }
+        }
+
+        function setStatus(msg) {
+            uiGuideBubble.classList.remove('bubble-pop');
+            void uiGuideBubble.offsetWidth; 
+            uiGuideBubble.classList.add('bubble-pop');
+
+            uiGuideText.textContent = '';
+            clearInterval(typeInterval);
+            
+            let i = 0;
+            typeInterval = setInterval(() => {
+                uiGuideText.textContent += msg.charAt(i);
+                i++;
+                if (i >= msg.length) {
+                    clearInterval(typeInterval);
+                }
+            }, 50); 
+        }
+
+        init();
+
+    </script>
 </body>
 </html>
+
+
+

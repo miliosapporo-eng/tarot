@@ -27,24 +27,31 @@
             }
         }
 
-        /* Landscape Optimization */
+        /* Landscape Optimization (Horizontal Mobile) */
         @media (orientation: landscape) and (max-height: 600px) {
             :root {
+                /* 横画面ではカードを小さくして一覧性を高める */
                 --card-w: 80px; 
                 --card-h: 137px;
             }
-            #title-img { display: none !important; }
+            /* タイトル画像を消してスペース確保 */
+            #title-img {
+                display: none !important;
+            }
+            /* ヘッダーをコンパクトに */
             header {
                 padding-top: 0.25rem !important;
                 padding-bottom: 0.25rem !important;
                 height: auto !important;
                 min-height: 2.5rem;
             }
+            /* スクロールしやすくする */
             #table-top {
-                align-items: flex-start !important;
+                align-items: flex-start !important; /* 上詰め */
                 padding-top: 2rem;
-                padding-bottom: 4rem;
+                padding-bottom: 4rem; /* フッター分 */
             }
+            /* デッキ位置調整 */
             #deck-area {
                 bottom: 0.5rem !important;
                 transform: translateX(-50%) scale(0.8) !important;
@@ -80,10 +87,9 @@
             cursor: grab;
             opacity: 0;
             z-index: 10;
+            /* ★重要: クリックイベントを受け付ける設定 */
             pointer-events: auto;
             touch-action: none; 
-            /* Smooth transition for resize adjustment */
-            transition: width 0.3s, height 0.3s;
         }
         
         .card-scene:active {
@@ -284,7 +290,8 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10000;
+            /* ★ Z-indexを最大値に設定して最上位表示にする */
+            z-index: 99999;
             width: 90%;
             pointer-events: none;
         }
@@ -337,7 +344,7 @@
             50% { opacity: 0; }
         }
 
-        /* Guide Container Position */
+        /* Guide Container Position - Moved above footer */
         #guide-container {
             padding-bottom: 0 !important; 
         }
@@ -389,6 +396,7 @@
         </div>
 
         <!-- Guide Character & Bubble -->
+        <!-- Fixed: Positioned bottom-0 to sit exactly on top of the footer -->
         <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
@@ -576,6 +584,7 @@
             
             document.getElementById('btn-submit-topic').addEventListener('click', handleTopicSubmit);
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
+                // Change from empty string to explicit "テーマなし"
                 currentTopic = "テーマなし"; 
                 hideModal(uiTopicModal);
                 updateTopicUI();
@@ -586,6 +595,7 @@
             uiDeckStack.addEventListener('click', handleDeckClick);
             uiBtnOpen.addEventListener('click', startReveal);
             
+            // Fix: Use resetGame with true for full reset
             uiBtnReset.addEventListener('click', () => resetGame(true));
             
             uiBtnShare.addEventListener('click', handleNativeShare);
@@ -617,10 +627,6 @@
         function repositionCards() {
             const conf = SPREAD_CONFIGS[currentSpread];
             const spreadRect = uiSpreadLayer.getBoundingClientRect();
-            
-            // Re-read card dimensions from CSS or DOM
-            // Since we use CSS media queries, reading offsetWidth from an existing card is best,
-            // or creating a temp one. But drawnCards elements already exist.
             
             drawnCards.forEach((item, index) => {
                 const el = item.el;
@@ -663,7 +669,7 @@
             }
             currentSpread = val;
             lastValidSpread = val;
-            resetGame(false); 
+            resetGame(false); // Do not reset topic on spread change
         }
 
         function handleLoginSubmit() {
@@ -673,6 +679,7 @@
                 updateLoginStateUI();
                 showToast("ログインしました。", "success");
                 
+                // Immediately reset to allow new spread selection or topic input
                 resetGame(false);
                 
             } else {
@@ -773,6 +780,7 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
+            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
@@ -922,11 +930,8 @@
             currentDragCard = targetEl;
 
             currentDragCard.style.zIndex = 100;
-            // Temporary disable transition for immediate follow
             currentDragCard.style.transition = 'none';
 
-            // Calculate offset relative to current position
-            // We use style.left/top so we need to parse them
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;
 

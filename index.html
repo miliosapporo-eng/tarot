@@ -14,16 +14,48 @@
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            /* カードサイズを約2.5倍に拡大 */
+            /* カードサイズ（基本: 縦画面用） */
             --card-w: 160px;
             --card-h: 274px;
+            /* フッターの高さ */
+            --footer-h: 5rem;
+            /* ヘッダーの高さ */
+            --header-h: 4rem; 
         }
 
-        /* Mobile Optimization */
+        /* Mobile Optimization (Portrait) */
         @media (min-width: 375px) {
             :root {
                 --card-w: 180px;
                 --card-h: 308px;
+            }
+        }
+
+        /* Landscape Optimization (Horizontal) */
+        @media (orientation: landscape) and (max-height: 600px) {
+            :root {
+                /* 横画面ではカードを小さく */
+                --card-w: 100px;
+                --card-h: 171px;
+                --header-h: 2.5rem; /* ヘッダーを短く */
+            }
+            /* 横画面時の特例スタイル */
+            #title-img {
+                display: none; /* タイトル画像を消してスペース確保 */
+            }
+            #current-date, #btn-login-header {
+                font-size: 0.7rem; /* 文字サイズ調整 */
+            }
+            .date-line {
+                margin-bottom: 0 !important;
+                padding: 2px 0 !important;
+                border: none !important;
+            }
+            #guide-container {
+                /* キャラクター位置調整 */
+                transform: scale(0.8); 
+                transform-origin: bottom right;
+                bottom: 0 !important;
             }
         }
 
@@ -56,7 +88,6 @@
             cursor: grab;
             opacity: 0;
             z-index: 10;
-            /* ★重要: クリックイベントを受け付ける設定 */
             pointer-events: auto;
             touch-action: none; 
         }
@@ -71,7 +102,7 @@
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            border-radius: 8px;
+            border-radius: 6px;
             box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
             pointer-events: none;
         }
@@ -81,7 +112,7 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
             border: 1px solid #444;
             background: #fff;
@@ -114,12 +145,16 @@
             position: relative;
             flex-grow: 1;
             width: 100%;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            /* Allow scrolling if content overflows */
+            overflow: auto; 
+            /* Hide scrollbar for cleaner look */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+            display: block; /* Changed from flex to block to allow absolute positioning context */
             z-index: 1;
+        }
+        #table-top::-webkit-scrollbar { 
+            display: none; 
         }
 
         #spread-layer {
@@ -128,6 +163,8 @@
             left: 0;
             width: 100%;
             height: 100%;
+            /* Ensure layer is big enough to scroll if needed */
+            min-height: 100%; 
             pointer-events: none;
             z-index: 20;
         }
@@ -143,13 +180,22 @@
             z-index: 30;
         }
 
+        /* Adjust deck position for landscape */
+        @media (orientation: landscape) and (max-height: 600px) {
+            #deck-area {
+                bottom: 1rem;
+                /* Move deck slightly left to not overlap with character */
+                left: 40%; 
+            }
+        }
+
         .deck-card {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #333;
             background: #333;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
@@ -203,6 +249,9 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             position: relative;
+            /* Ensure modal is scrollable on very small landscape screens */
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-overlay.active .paper-modal {
             transform: scale(1);
@@ -303,25 +352,19 @@
             50% { opacity: 0; }
         }
 
-        /* Adjust Guide Container to stick to bottom of main area */
-        #guide-container {
-            /* padding-bottom 0 makes it sit right on the line */
-            padding-bottom: 0 !important; 
-        }
-
     </style>
 </head>
 <body>
 
     <!-- Top Bar -->
-    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm">
-        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1">
+    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm transition-all duration-300">
+        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1 date-line">
              <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700">VOL. I</span>
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
         <!-- Title Image -->
-        <img src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
+        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm transition-all duration-300">
 
         <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
@@ -352,12 +395,11 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
-            <!-- Removed deck label -->
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Positioned bottom-0 to sit directly on the footer line -->
-        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
+        <!-- Fixed: Positioned bottom-0 to sit exactly on top of the footer -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-40 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
@@ -375,7 +417,7 @@
             
             <div class="relative flex-grow">
                 <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">
-                    <option value="one_oracle">ワンオラクル (1枚)</option>
+                    <option value="one_oracle">ワンオラクル (1枚) [無料]</option>
                     <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
                     <option value="two_mind">🔒 ツーマインド (2枚)</option>
                     <option value="simple_cross">🔒 シンプルクロス (2枚)</option>
@@ -601,6 +643,10 @@
                 hideModal(uiLoginModal);
                 updateLoginStateUI();
                 showToast("ログインしました。", "success");
+                
+                // Immediately reset to allow new spread selection or topic input
+                resetGame();
+                
             } else {
                 uiLoginError.classList.remove('hidden');
             }
@@ -619,9 +665,10 @@
 
         function updateLoginStateUI() {
             const btn = document.getElementById('btn-login-header');
+            const opts = uiSpreadSelect.options;
+
             if(isLoggedIn) {
                 btn.innerText = "ログアウト";
-                const opts = uiSpreadSelect.options;
                 for(let i=0; i<opts.length; i++) {
                     opts[i].text = opts[i].text.replace("🔒 ", "");
                 }
@@ -659,7 +706,7 @@
             if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
             
             if(isLoggedIn && currentState === 'IDLE' && !currentTopic) {
-                uiTopicInput.value = "";
+                if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);
                 return;
             }
@@ -790,9 +837,9 @@
         }
 
         function resetGame() {
-            // If logged in, ask topic again
+            // ★ Reset topic state correctly
             if(isLoggedIn) {
-                uiInputTopic.value = "";
+                if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);
             }
 
@@ -801,8 +848,7 @@
             currentState = 'IDLE';
             populateDeck();
             
-            // Explicitly Reset pickCount
-            pickCount = 0;
+            pickCount = 0; // Explicit reset
 
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');

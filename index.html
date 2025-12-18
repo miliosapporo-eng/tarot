@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mystic Tarot Reader</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Miltonian&family=Zen+Maru+Gothic:wght@300;700&display=swap');
@@ -30,20 +29,14 @@
             color: #e2e8f0;
             font-family: 'Zen Maru Gothic', sans-serif;
             overflow: hidden;
-            /* Fix viewport height for mobile */
             height: 100vh; 
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            /* Removed global touch-action: none to restore native controls */
+            /* Allow default touch actions unless overridden */
         }
 
         /* UI Elements */
-        .gold-border {
-            border: 1px solid var(--gold);
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
-        }
-
         .mystic-text {
             font-family: 'Miltonian', cursive;
             color: var(--gold);
@@ -61,7 +54,7 @@
             opacity: 0;
             z-index: 10;
             pointer-events: auto;
-            touch-action: none; /* Only disable browser touch actions on the card itself */
+            touch-action: none; /* Prevent scroll while dragging card */
         }
         
         .card-scene:active {
@@ -80,7 +73,7 @@
             transition: transform 0.8s;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            pointer-events: none; /* Let clicks pass to card-scene */
+            pointer-events: none;
         }
 
         .card-face {
@@ -133,32 +126,7 @@
             width: 100%;
             perspective: 1200px;
             overflow: hidden;
-            z-index: 1; /* Low z-index */
-        }
-
-        /* Shuffle Animation */
-        .shuffle-hand {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--gold);
-            border-radius: 50%;
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(0);
-            transition: transform 0.2s, opacity 0.2s;
-            box-shadow: 0 0 30px var(--gold-glow);
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .shuffle-hand::after {
-            content: "🖐";
-            font-size: 60px;
-            opacity: 0.8;
-            filter: drop-shadow(0 0 10px var(--gold));
+            z-index: 1;
         }
 
         .shuffle-card {
@@ -185,8 +153,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%; /* Cover full main area */
-            pointer-events: none; /* Crucial: allow clicks to pass through empty space */
+            height: 100%;
+            pointer-events: none;
             z-index: 20;
         }
         
@@ -235,7 +203,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999; /* Highest priority */
+            z-index: 9999;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
@@ -283,37 +251,37 @@
             display: none;
         }
 
-        /* Share Image Preview Mock */
-        .share-preview {
-            background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
-            border: 2px solid var(--gold);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            text-align: left;
-            position: relative;
-            overflow: hidden;
+        /* Notification Toast */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
         }
-        .share-preview::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIiBmaWxsLW9wYWNpdHk9IjAuMDUiIGZpbGw9IiNmZmYiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiLz48L3N2Zz4=');
-            opacity: 0.5;
+        .toast {
+            background: rgba(30, 41, 59, 0.95);
+            border-left: 4px solid var(--gold);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+            pointer-events: auto;
+            max-width: 300px;
+            font-size: 0.9rem;
         }
-        
-        /* SNS Brand Colors */
-        .bg-instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-        }
-        .bg-note {
-            background-color: #41C9B4;
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Truncate text logic */
         .truncate-text {
             white-space: nowrap;
             overflow: hidden;
@@ -326,20 +294,19 @@
 <body>
 
     <!-- Header / Menu -->
-    <!-- z-index boosted to 100 to stay above everything -->
     <header class="h-16 shrink-0 bg-black/50 backdrop-blur-md border-b border-gray-800 flex items-center px-4 z-[100] relative">
-        <!-- Topic Display (Desktop: Left side) -->
+        <!-- Topic Display (Desktop) -->
         <div id="topic-display-desktop" class="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex items-center opacity-0 transition-opacity duration-500 text-yellow-500 font-bold text-sm bg-black/40 px-3 py-1 rounded-full border border-yellow-800 z-20 max-w-[300px]">
             <span class="text-xs text-gray-400 mr-2 shrink-0">THEME:</span>
             <span id="topic-text-content-desktop" class="truncate-text"></span>
         </div>
 
-        <!-- App Title: Centered Absolutely -->
+        <!-- App Title -->
         <h1 id="app-title" class="mystic-text text-xl md:text-3xl font-bold tracking-widest absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[60%] text-center pointer-events-none truncate">
             TAROT MYSTERY
         </h1>
         
-        <!-- Login Button Area: Pushed to the right -->
+        <!-- Login Button -->
         <div class="ml-auto z-20">
             <button id="btn-login-header" class="text-xs md:text-sm font-bold text-indigo-200 border border-indigo-500 px-3 py-1 rounded hover:bg-indigo-900 transition-colors">
                 LOGIN
@@ -350,7 +317,10 @@
     <!-- Main Table Area -->
     <main id="table-top" class="relative">
         
-        <!-- Mobile Topic Display (Top of main area) -->
+        <!-- Toast Notification Area -->
+        <div id="toast-container"></div>
+
+        <!-- Mobile Topic Display -->
         <div id="topic-display-mobile" class="absolute top-2 left-1/2 transform -translate-x-1/2 w-[90%] md:hidden z-30 opacity-0 transition-opacity duration-500 pointer-events-none">
             <div class="bg-black/60 backdrop-blur-sm border border-yellow-800 rounded-full px-3 py-1 flex items-center justify-center">
                 <span class="text-[10px] text-gray-400 mr-2 shrink-0">THEME:</span>
@@ -364,39 +334,31 @@
         <!-- Where loose shuffle cards move -->
         <div id="shuffle-layer" class="absolute inset-0 z-1 pointer-events-none overflow-hidden"></div>
 
-        <!-- Shuffle/Deck Area (Bottom Center) -->
-        <!-- z-index lowered to 40, above spread layer but below controls -->
+        <!-- Shuffle/Deck Area -->
         <div id="deck-area" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-44 flex justify-center items-center z-40">
-            <!-- The visual stack of cards -->
             <div id="deck-stack" class="relative w-full h-full cursor-pointer group">
                 <div class="absolute inset-0 bg-yellow-500/10 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <!-- Back of card image rendered here by JS -->
+                <!-- Back of card image -->
                 <div id="deck-visual" class="w-[80px] h-[140px] md:w-[100px] md:h-[174px] bg-gray-800 rounded-lg border-2 border-yellow-700 shadow-2xl relative mx-auto">
                     <img id="deck-img" src="cards/back.jpg" alt="Deck" class="w-full h-full object-cover rounded-lg opacity-80" onerror="this.src='https://placehold.co/100x174/330000/d4af37?text=TAROT';">
-                    <!-- Multiple layers for stack effect -->
                     <div class="absolute top-1 left-1 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-10"></div>
                     <div class="absolute top-2 left-2 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-20"></div>
                     <div class="absolute top-3 left-3 w-full h-full bg-gray-800 border border-yellow-900 rounded-lg -z-30"></div>
                 </div>
             </div>
-            
-            <!-- Hand Animation Cursor -->
-            <div id="hand-cursor" class="shuffle-hand"></div>
         </div>
 
-        <!-- Guide Character & Bubble (Bottom Right) -->
-        <!-- pointer-events-none allows clicking through to footer if overlap occurs -->
-        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[60%] md:max-w-[30%]">
+        <!-- Guide Character & Bubble -->
+        <!-- Enlarged Seer Image -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <!-- Speech Bubble -->
-            <div id="guide-bubble" class="bg-gray-900/90 text-yellow-100 p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border border-yellow-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transform origin-bottom-right bubble-pop relative mr-8">
+            <div id="guide-bubble" class="bg-gray-900/90 text-yellow-100 p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border border-yellow-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transform origin-bottom-right bubble-pop relative mr-12 md:mr-16">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor"></p>
-                <!-- Tail -->
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-gray-900/90 border-r border-b border-yellow-700 transform rotate-45"></div>
             </div>
             
-            <!-- Character Image (Transparent PNG, No border) -->
-            <!-- Adjusted sizing to be slightly larger due to no border -->
-            <div class="w-20 h-20 md:w-32 md:h-32 relative mr-1 md:mr-2">
+            <!-- Character Image (Larger) -->
+            <div class="w-28 h-28 md:w-48 md:h-48 relative mr-1 md:mr-4">
                  <img id="guide-img" src="cards/seer.png" onerror="this.src='https://placehold.co/150x150/1e1b4b/d4af37?text=Seer'" class="w-full h-full object-contain opacity-100 drop-shadow-xl">
             </div>
         </div>
@@ -455,70 +417,9 @@
             </div>
         </div>
 
-        <!-- Share Modal -->
-        <div id="share-modal" class="modal-overlay">
-            <div class="common-modal">
-                <h2 class="text-2xl font-bold text-white mb-4 font-cinzel">Share Your Destiny</h2>
-                
-                <!-- Generated Image Mock -->
-                <div class="share-preview">
-                    <h3 class="text-yellow-500 font-bold mb-2">TAROT MYSTERY RESULT</h3>
-                    <p id="share-preview-topic" class="text-gray-300 text-sm mb-4 border-b border-gray-600 pb-2">Theme: 未入力</p>
-                    <div class="flex items-center gap-4">
-                        <div class="w-16 h-24 bg-gray-800 border border-yellow-600 rounded"></div>
-                        <div class="text-xs text-gray-400">
-                            The cards have spoken.<br>
-                            A new path reveals itself...
-                        </div>
-                    </div>
-                    <div class="absolute bottom-2 right-2 text-[10px] text-gray-600">design4qol.com</div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <!-- X (Twitter) -->
-                    <button title="X (Twitter)" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
-                        <i class="fa-brands fa-x-twitter text-white text-2xl"></i>
-                    </button>
-                    
-                    <!-- LINE -->
-                    <button title="LINE" class="p-3 bg-[#00C300] rounded-lg hover:bg-green-600 transition-colors flex justify-center items-center">
-                        <i class="fa-brands fa-line text-white text-2xl"></i>
-                    </button>
-
-                    <!-- Instagram -->
-                    <button title="Instagram" class="p-3 bg-instagram rounded-lg hover:opacity-90 transition-opacity flex justify-center items-center">
-                        <i class="fa-brands fa-instagram text-white text-2xl"></i>
-                    </button>
-                    
-                    <!-- TikTok -->
-                    <button title="TikTok" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
-                        <i class="fa-brands fa-tiktok text-white text-2xl"></i>
-                    </button>
-                    
-                    <!-- Threads -->
-                    <button title="Threads" class="p-3 bg-black rounded-lg hover:bg-gray-800 border border-gray-700 transition-colors flex justify-center items-center">
-                        <i class="fa-brands fa-threads text-white text-2xl"></i>
-                    </button>
-                    
-                    <!-- note (Custom SVG) -->
-                    <button title="note" class="p-3 bg-note rounded-lg hover:opacity-90 transition-opacity flex justify-center items-center">
-                        <svg viewBox="0 0 500 500" class="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M43.75,43.75h412.5v412.5h-412.5z M250,93.75c-86.25,0-156.25,70-156.25,156.25s70,156.25,156.25,156.25s156.25-70,156.25-156.25s-70-156.25-156.25-156.25z M187.5,337.5l-62.5-62.5l25-25l37.5,37.5l100-100l25,25l-125,125z"/>
-                            <path d="M120 180 h 50 v 140 h -50 Z M 210 180 h 50 v 20 h 10 c 10 -20 40 -30 60 0 v 120 h -50 v -100 c 0 -10 -10 -20 -20 -20 s -20 10 -20 20 v 100 h -50 Z" fill="white"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <button id="btn-close-share" class="text-sm text-gray-500 hover:text-gray-300 underline">
-                    閉じる
-                </button>
-            </div>
-        </div>
-
     </main>
 
     <!-- Control Footer -->
-    <!-- z-index boosted to 100 -->
     <footer class="min-h-[5rem] shrink-0 py-2 bg-black/80 backdrop-blur-md flex flex-wrap justify-center items-center gap-2 md:gap-4 border-t border-gray-800 z-[100] relative">
         
         <div class="relative group">
@@ -554,9 +455,10 @@
             AGAIN
         </button>
 
+        <!-- Native Share Button -->
         <button id="btn-share" class="px-4 md:px-6 py-2 md:py-3 bg-pink-900/50 hover:bg-pink-700 text-pink-100 border border-pink-500 rounded-full text-xs md:text-sm transition-all hidden flex items-center gap-1">
             <span class="hidden md:inline">SHARE</span>
-            <i class="fa-solid fa-share-nodes text-lg md:text-base"></i>
+            <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
         </button>
     </footer>
 
@@ -566,13 +468,16 @@
          */
 
         // ==========================================
-        //  CONFIG: IMAGE PATHS & SETTINGS
+        //  CONFIG
         // ==========================================
-        const IMG_FOLDER = 'cards/';  // Correct folder name
+        const IMG_FOLDER = 'cards/';  
         const IMG_EXT = '.jpg';        
         const BACK_IMG = 'back.jpg';   
-        const SEER_IMG = 'seer.png'; // PNG for transparency
+        const SEER_IMG = 'seer.png'; 
         
+        // ★ IMPORTANT: Google Apps Script Web App URL (Pre-filled)
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyFm-zum4hO5_chb7SDm95gAIWH5JHuxBjHjLDOojDFv8rp5YEk12HuZt-eEN2tEyRN/exec";
+
         const POSITIVE_TITLES = [
             "SERENDIPITY", "ILLUMINATION", "NEW HORIZON", "INNER LIGHT", "PURE JOY", 
             "DIVINE GRACE", "INFINITE HOPE", "SYNCHRONICITY", "RADIANT SOUL", "TRUE CALLING", 
@@ -648,7 +553,6 @@
         const uiDeckVisual = document.getElementById('deck-visual');
         const uiSpreadLayer = document.getElementById('spread-layer');
         const uiShuffleLayer = document.getElementById('shuffle-layer');
-        const uiHand = document.getElementById('hand-cursor');
         const uiTableTop = document.getElementById('table-top');
         
         const uiDeckImg = document.getElementById('deck-img');
@@ -657,7 +561,6 @@
         // Modals
         const uiLoginModal = document.getElementById('login-modal');
         const uiTopicModal = document.getElementById('topic-modal');
-        const uiShareModal = document.getElementById('share-modal');
         
         const uiInputId = document.getElementById('login-id');
         const uiInputPass = document.getElementById('login-pass');
@@ -671,8 +574,7 @@
         const uiBtnSubmitTopic = document.getElementById('btn-submit-topic');
         const uiBtnCancelTopic = document.getElementById('btn-cancel-topic');
         
-        const uiBtnCloseShare = document.getElementById('btn-close-share');
-        const uiSharePreviewTopic = document.getElementById('share-preview-topic');
+        const uiToastContainer = document.getElementById('toast-container');
 
 
         // --- Init ---
@@ -756,12 +658,7 @@
                 setStatus("テーマなしで占います。シャッフルを開始してください。");
             });
 
-            uiBtnShare.addEventListener('click', () => {
-                uiSharePreviewTopic.textContent = `Theme: ${currentTopic}`;
-                showModal(uiShareModal);
-            });
-            uiBtnCloseShare.addEventListener('click', () => hideModal(uiShareModal));
-
+            uiBtnShare.addEventListener('click', handleShare);
 
             uiBtnShuffle.addEventListener('click', startShuffle);
             
@@ -781,6 +678,41 @@
             document.addEventListener('touchend', handleDragEnd);
 
             setStatus("スプレッドを選んで SHUFFLE を押してください (未ログイン: 2枚まで)");
+        }
+
+        // --- Share Logic (Native Web Share API) ---
+        async function handleShare() {
+            const url = "https://tarot.design4qol.com/";
+            const text = `🔮 Tarot Mystery Result\nTheme: ${currentTopic}\n#TarotMystery`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Tarot Mystery',
+                        text: text,
+                        url: url
+                    });
+                } catch (err) {
+                    console.log('Share canceled or failed', err);
+                }
+            } else {
+                // Fallback for PC/Unsupported browsers
+                copyToClipboard(`${text}\n${url}`);
+                showToast("結果のURLをコピーしました。<br>SNSで共有してください。", "info");
+            }
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("Copy");
+                textArea.remove();
+            }
         }
 
         function setRandomTitle() {
@@ -804,6 +736,27 @@
             el.classList.remove('active');
         }
         
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            let icon = `<svg viewBox="0 0 24 24" class="w-5 h-5 fill-current text-yellow-500 shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
+            if (type === 'success') {
+                icon = `<svg viewBox="0 0 24 24" class="w-5 h-5 fill-current text-green-500 shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+            }
+            
+            toast.innerHTML = `${icon}<span>${message}</span>`;
+            
+            uiToastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         function updateLoginUI(loggedIn) {
             const options = uiSpreadSelect.querySelectorAll('option');
             options.forEach(opt => {
@@ -862,9 +815,29 @@
             }
         }
 
-        // --- Mock Backend Logic ---
-        async function mockSaveAndNotify() {
-            // Notification removed
+        // --- Backend Integration (GAS) ---
+        function sendResultToBackend() {
+            if (!API_ENDPOINT) return;
+
+            const data = {
+                date: new Date().toISOString(),
+                theme: currentTopic,
+                spread: currentSpread,
+                cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
+            };
+
+            fetch(API_ENDPOINT, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                console.log("Sent to backend");
+            })
+            .catch(err => console.error("Backend error:", err));
         }
 
         // --- Shuffle Logic ---
@@ -931,13 +904,6 @@
             const rect = uiTableTop.getBoundingClientRect();
             const w = rect.width;
             const h = rect.height;
-            const handRect = uiHand.getBoundingClientRect();
-
-            const time = Date.now() * 0.005;
-            const handX = (w/2) + Math.cos(time) * 100;
-            const handY = (h/2) + Math.sin(time) * 50;
-            
-            uiHand.style.transform = `translate(${handX}px, ${handY}px) scale(1)`;
 
             shuffleCardElements.forEach(c => {
                 c.x += c.vx;
@@ -1006,9 +972,6 @@
                 uiDeckStack.classList.remove('hidden');
                 currentState = 'STOPPED';
                 
-                uiHand.style.transition = "all 0.5s";
-                uiHand.style.transform = `translate(${tableRect.width/2}px, ${tableRect.height-100}px) scale(1)`; 
-                
                 setStatus("もう一度クリックして運命のカードを引く");
             }, 1000);
         }
@@ -1052,9 +1015,6 @@
 
             pickCount++;
 
-            uiHand.style.transform = uiHand.style.transform.replace('scale(1)', 'scale(0.8)');
-            setTimeout(() => uiHand.style.transform = uiHand.style.transform.replace('scale(0.8)', 'scale(1)'), 150);
-
             if (pickCount < spreadData.count) {
                 setStatus(`${pickCount + 1}枚目を引いてください。`);
                 
@@ -1064,7 +1024,6 @@
             } else {
                 currentState = 'READY';
                 setStatus("全てのカードが揃いました。OPENボタンを押してください");
-                uiHand.style.transform = 'translate(-50%, -50%) scale(0)';
                 uiBtnOpen.disabled = false;
                 uiDeckStack.classList.remove('hidden');
             }
@@ -1120,9 +1079,6 @@
             target.style.zIndex = 100;
             target.classList.remove('flying');
             
-            // Allow default interaction, stop propagation to prevent background scroll IF needed
-            // But we removed global touch-action: none so default scroll is ON.
-            // We want to prevent scroll ONLY when dragging a card.
             if (e.type === 'touchstart') {
                 e.preventDefault(); 
             }
@@ -1170,7 +1126,10 @@
                 uiBtnShare.classList.remove('hidden');
                 uiBtnShare.classList.add('flex');
 
-                mockSaveAndNotify();
+                if(isLoggedIn) {
+                    showToast("結果をMilioへ送信しました。<br>result@design4qol.com からの解説メールをお待ちください。", "success");
+                    sendResultToBackend();
+                }
 
             }, delay);
         }
@@ -1223,5 +1182,3 @@
     </script>
 </body>
 </html>
-
-

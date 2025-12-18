@@ -14,11 +14,9 @@
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            /* カードサイズ */
+            /* カードサイズを約2.5倍に拡大 */
             --card-w: 160px;
             --card-h: 274px;
-            /* フッターの高さ */
-            --footer-h: 5rem;
         }
 
         /* Mobile Optimization */
@@ -304,12 +302,6 @@
             50% { opacity: 0; }
         }
 
-        /* Guide Container Position - Moved above footer */
-        #guide-container {
-            bottom: var(--footer-h); /* Raise by footer height */
-            padding-bottom: 0.5rem;
-        }
-
     </style>
 </head>
 <body>
@@ -353,11 +345,12 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
+            <!-- Removed deck label -->
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Position adjusted in CSS to sit on top of footer -->
-        <div id="guide-container" class="absolute right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
+        <!-- Fixed: Added bottom-0 to place it exactly at the bottom of main area -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
@@ -370,8 +363,8 @@
     </main>
 
     <!-- Control Footer -->
-    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50 h-20">
-        <div class="flex flex-wrap justify-between items-center gap-2 max-w-md mx-auto h-full">
+    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50">
+        <div class="flex flex-wrap justify-between items-center gap-2 max-w-md mx-auto">
             
             <div class="relative flex-grow">
                 <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">

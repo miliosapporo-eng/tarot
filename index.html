@@ -311,14 +311,14 @@
 <body>
 
     <!-- Top Bar -->
-    <header class="shrink-0 w-full px-4 pt-2 pb-2 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm">
+    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm">
         <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1">
              <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700">VOL. I</span>
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
-        <!-- Title Image (3x Larger) -->
-        <img src="images/title.png" alt="The Daily Oracle" class="h-24 md:h-32 object-contain mb-2 drop-shadow-sm">
+        <!-- Title Image (Adjusted: Tighter height) -->
+        <img src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
 
         <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
@@ -349,7 +349,8 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
-            <div class="text-center mt-2 text-xs font-serif opacity-70">山札</div>
+            <!-- Added ID for toggling visibility -->
+            <div id="deck-label" class="text-center mt-2 text-xs font-serif opacity-70">山札</div>
         </div>
 
         <!-- Guide Character & Bubble -->
@@ -505,6 +506,8 @@
             document.getElementById('deck-back-2'),
             document.getElementById('deck-back-3')
         ];
+        // Added Deck Label Element
+        const uiDeckLabel = document.getElementById('deck-label');
 
         const uiLoginModal = document.getElementById('login-modal');
         const uiTopicModal = document.getElementById('topic-modal');
@@ -736,7 +739,10 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
+                // ★ Hide Deck and Label when done
                 uiDeckStack.classList.add('hidden'); 
+                uiDeckLabel.classList.add('hidden');
+                
                 setStatus("カードが揃いました。「開く」を押してください。");
             } else {
                 setTimeout(() => {
@@ -803,10 +809,13 @@
             uiDeckStack.classList.remove('hidden');
             uiDeckStack.classList.remove('shuffling');
             
+            // ★ Show Label on Reset
+            uiDeckLabel.classList.remove('hidden');
+            
             if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
-        // --- Drag Implementation (Fixed) ---
+        // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
             // Mouse left click only
@@ -821,13 +830,9 @@
             isDragging = true;
             currentDragCard = targetEl;
 
-            // Bring to front
             currentDragCard.style.zIndex = 100;
-            // Remove transitions for instant movement
             currentDragCard.style.transition = 'none';
 
-            // Calculate offset relative to current position
-            // We use style.left/top so we need to parse them
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;
 
@@ -856,8 +861,6 @@
             if (!isDragging) return;
             if(currentDragCard) {
                 currentDragCard.style.zIndex = 50;
-                // Optional: Re-enable transition if needed
-                // currentDragCard.style.transition = 'all 0.5s ease-out';
             }
             isDragging = false;
             currentDragCard = null;
@@ -896,7 +899,6 @@
                         url: url
                     });
                 } catch (err) {
-                    // Share cancelled
                 }
             } else {
                 if(navigator.clipboard) {

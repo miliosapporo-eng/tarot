@@ -14,15 +14,19 @@
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            --card-w: 70px;
-            --card-h: 120px;
+            /* カードサイズを約2.5倍に拡大 
+               元: 70px/120px -> 175px/300px (Base)
+            */
+            --card-w: 160px;
+            --card-h: 274px;
         }
 
         /* Mobile Optimization */
         @media (min-width: 375px) {
             :root {
-                --card-w: 80px;
-                --card-h: 137px;
+                /* 元: 80px/137px -> 約2.5倍 */
+                --card-w: 180px;
+                --card-h: 308px;
             }
         }
 
@@ -52,20 +56,25 @@
             perspective: 1000px;
             position: absolute;
             transform-style: preserve-3d;
-            cursor: pointer;
+            cursor: grab;
             opacity: 0; /* JS will change this to 1 */
             z-index: 10;
-            touch-action: none;
+            /* Allow touch actions only when NOT finished, handled in JS */
+            touch-action: none; 
         }
         
+        .card-scene:active {
+            cursor: grabbing;
+        }
+
         .card-obj {
             width: 100%;
             height: 100%;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            border-radius: 4px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            border-radius: 8px; /* Slightly more rounded for larger cards */
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
         }
 
         .card-face {
@@ -73,7 +82,7 @@
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 4px;
+            border-radius: 8px;
             overflow: hidden;
             border: 1px solid #444;
             background: #fff;
@@ -140,10 +149,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 4px;
+            border-radius: 8px;
             border: 1px solid #333;
             background: #333;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             transition: transform 0.1s;
         }
         
@@ -305,8 +314,8 @@
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
-        <!-- Title Image -->
-        <img src="images/title.png" alt="The Daily Oracle" class="h-10 md:h-14 object-contain mb-1 drop-shadow-sm">
+        <!-- Title Image (3x Larger) -->
+        <img src="images/title.png" alt="The Daily Oracle" class="h-24 md:h-32 object-contain mb-2 drop-shadow-sm">
 
         <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
@@ -444,9 +453,9 @@
         // ★ Google Apps Script Web App URL
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
 
-        const TOTAL_CARDS = 22; // Only Major Arcana (0-21)
+        const TOTAL_CARDS = 22; 
+        const SHUFFLE_CARD_COUNT = 40;
         
-        // Simplified Spreads (Max 4 cards)
         const SPREAD_CONFIGS = {
             'one_oracle': { count: 1, pos: [{x:50, y:40}], loginReq: false },
             'two_oracle': { count: 2, pos: [{x:35, y:40}, {x:65, y:40}], loginReq: true },
@@ -501,6 +510,11 @@
         const uiLoginError = document.getElementById('login-error');
         const uiTopicInput = document.getElementById('topic-input');
 
+        // --- Drag Variables ---
+        let isDragging = false;
+        let currentDragCard = null;
+        let startX, startY, initialLeft, initialTop;
+
         // --- Init ---
         function init() {
             // Set Date
@@ -510,6 +524,7 @@
             setupImages();
             populateDeck();
             
+            // Event Listeners
             uiSpreadSelect.addEventListener('change', handleSpreadChange);
             
             document.getElementById('btn-login-header').addEventListener('click', () => {
@@ -534,6 +549,14 @@
             uiBtnReset.addEventListener('click', resetGame);
             uiBtnShare.addEventListener('click', handleNativeShare);
             
+            // Drag Events (Global)
+            document.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('touchstart', handleDragStart, {passive: false});
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('touchmove', handleDragMove, {passive: false});
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchend', handleDragEnd);
+
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
@@ -557,7 +580,7 @@
             
             if (conf.loginReq && !isLoggedIn) {
                 showModal(uiLoginModal);
-                uiSpreadSelect.value = lastValidSpread; // Revert
+                uiSpreadSelect.value = lastValidSpread;
                 return;
             }
             currentSpread = val;
@@ -580,7 +603,6 @@
             if(confirm("ログアウトしますか？")) {
                 isLoggedIn = false;
                 updateLoginStateUI();
-                // Reset to free spread
                 currentSpread = 'one_oracle';
                 lastValidSpread = 'one_oracle';
                 uiSpreadSelect.value = 'one_oracle';
@@ -592,7 +614,6 @@
             const btn = document.getElementById('btn-login-header');
             if(isLoggedIn) {
                 btn.innerText = "ログアウト";
-                // Unlock dropdown visual
                 const opts = uiSpreadSelect.options;
                 for(let i=0; i<opts.length; i++) {
                     opts[i].text = opts[i].text.replace("🔒 ", "").replace(" [Login]", "").replace("[要ログイン]", "");
@@ -623,7 +644,6 @@
         function startShuffle() {
             if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
             
-            // Check Topic Requirement for logged in users starting a new game
             if(isLoggedIn && currentState === 'IDLE' && !currentTopic) {
                 uiTopicInput.value = "";
                 showModal(uiTopicModal);
@@ -635,7 +655,6 @@
             uiBtnShuffle.disabled = true;
             uiSpreadSelect.disabled = true;
             
-            // Reset board
             uiSpreadLayer.innerHTML = '';
             drawnCards = [];
             pickCount = 0;
@@ -654,25 +673,21 @@
             if (pickCount >= conf.count) return;
 
             currentState = 'PICKING';
-            uiDeckStack.classList.remove('shuffling'); // Stop shuffle momentarily
+            uiDeckStack.classList.remove('shuffling');
 
-            // Draw logic
             if(deck.length === 0) populateDeck();
             const rIndex = Math.floor(Math.random() * deck.length);
             const cardId = deck[rIndex];
             deck.splice(rIndex, 1);
             const isReversed = Math.random() < 0.5;
 
-            // Create Card Element
             const el = document.createElement('div');
             el.className = 'card-scene';
-            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
                 <div class="card-obj">
                     <div class="card-face front">
-                        <!-- Reverse logic: rotate image itself if reversed -->
                         <img src="${IMG_FOLDER}${cardId}${IMG_EXT}" 
                              style="transform: ${isReversed ? 'rotate(180deg)' : 'none'};"
                              onerror="this.src='https://placehold.co/100x174/eee/333?text=${cardId}'">
@@ -694,7 +709,6 @@
 
             el.style.left = `${startX}px`;
             el.style.top = `${startY}px`;
-            // Make sure it starts visible
             el.style.opacity = '1';
 
             const pos = conf.pos[pickCount];
@@ -751,7 +765,7 @@
                 uiBtnShuffle.classList.add('hidden');
                 uiBtnOpen.classList.add('hidden');
                 
-                setStatus("リーディング完了。");
+                setStatus("リーディング完了。カードを動かして確認できます。");
 
                 if(isLoggedIn) {
                     sendDataToGAS();
@@ -760,7 +774,6 @@
         }
 
         function resetGame() {
-            // If logged in, ask topic again
             if(isLoggedIn) {
                 uiInputTopic.value = "";
                 showModal(uiTopicModal);
@@ -790,6 +803,64 @@
             if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
+        // --- Drag Implementation (Fixed) ---
+        function handleDragStart(e) {
+            if (currentState !== 'FINISHED') return;
+            // Mouse left click only
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            // Find valid card target
+            const targetEl = e.target.closest('.card-scene');
+            if (!targetEl) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+
+            isDragging = true;
+            currentDragCard = targetEl;
+
+            // Bring to front
+            currentDragCard.style.zIndex = 100;
+            // Remove transitions for instant movement
+            currentDragCard.style.transition = 'none';
+
+            // Calculate offset relative to current position
+            const rect = currentDragCard.getBoundingClientRect();
+            // We use style.left/top so we need to parse them
+            initialLeft = parseFloat(currentDragCard.style.left) || 0;
+            initialTop = parseFloat(currentDragCard.style.top) || 0;
+
+            startX = evt.clientX;
+            startY = evt.clientY;
+            
+            if (e.type === 'touchstart') {
+                e.preventDefault(); 
+            }
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !currentDragCard) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+            const dx = evt.clientX - startX;
+            const dy = evt.clientY - startY;
+
+            currentDragCard.style.left = `${initialLeft + dx}px`;
+            currentDragCard.style.top = `${initialTop + dy}px`;
+            
+            if(e.cancelable) e.preventDefault();
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            if(currentDragCard) {
+                currentDragCard.style.zIndex = 50;
+                // Optional: Re-enable transition if needed
+                // currentDragCard.style.transition = 'all 0.5s ease-out';
+            }
+            isDragging = false;
+            currentDragCard = null;
+        }
+
         // --- Utils ---
 
         function showModal(el) {
@@ -811,7 +882,6 @@
             }, 3000);
         }
 
-        // --- Native Share ---
         async function handleNativeShare() {
             const url = "https://tarot.design4qol.com/";
             const text = `🔮 今日の運命 (The Daily Oracle)\nTheme: ${currentTopic || 'My Destiny'}`;
@@ -827,7 +897,6 @@
                     // Share cancelled
                 }
             } else {
-                // Fallback
                 if(navigator.clipboard) {
                     navigator.clipboard.writeText(`${text} ${url}`);
                     showToast("リンクをクリップボードにコピーしました！");
@@ -837,7 +906,6 @@
             }
         }
 
-        // --- Backend ---
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
             
@@ -883,7 +951,6 @@
             }
         }
 
-        // Run
         init();
 
     </script>

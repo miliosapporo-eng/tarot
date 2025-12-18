@@ -27,37 +27,6 @@
             }
         }
 
-        /* Landscape Optimization (Horizontal Mobile) */
-        @media (orientation: landscape) and (max-height: 600px) {
-            :root {
-                /* 横画面ではカードを小さくして一覧性を高める */
-                --card-w: 80px; 
-                --card-h: 137px;
-            }
-            /* タイトル画像を消してスペース確保 */
-            #title-img {
-                display: none !important;
-            }
-            /* ヘッダーをコンパクトに */
-            header {
-                padding-top: 0.25rem !important;
-                padding-bottom: 0.25rem !important;
-                height: auto !important;
-                min-height: 2.5rem;
-            }
-            /* スクロールしやすくする */
-            #table-top {
-                align-items: flex-start !important; /* 上詰め */
-                padding-top: 2rem;
-                padding-bottom: 4rem; /* フッター分 */
-            }
-            /* デッキ位置調整 */
-            #deck-area {
-                bottom: 0.5rem !important;
-                transform: translateX(-50%) scale(0.8) !important;
-            }
-        }
-
         body {
             background-color: var(--paper-bg);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
@@ -145,17 +114,12 @@
             position: relative;
             flex-grow: 1;
             width: 100%;
-            overflow: auto; /* Allow Scroll */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1;
-            scrollbar-width: none; 
-            -ms-overflow-style: none;
-        }
-        #table-top::-webkit-scrollbar { 
-            display: none; 
         }
 
         #spread-layer {
@@ -164,8 +128,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            min-width: 100%;
-            min-height: 100%;
             pointer-events: none;
             z-index: 20;
         }
@@ -241,8 +203,6 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
         }
         .modal-overlay.active .paper-modal {
             transform: scale(1);
@@ -290,8 +250,7 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            /* ★ Z-indexを最大値に設定して最上位表示にする */
-            z-index: 99999;
+            z-index: 10000;
             width: 90%;
             pointer-events: none;
         }
@@ -361,7 +320,7 @@
         </div>
         
         <!-- Title Image -->
-        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
+        <img src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
 
         <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
@@ -396,7 +355,6 @@
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Positioned bottom-0 to sit exactly on top of the footer -->
         <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
@@ -450,18 +408,42 @@
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
             <p class="text-sm mb-6 text-gray-700">
-                2枚以上のスプレッドを利用するには認証が必要です。<br>
-                <span class="text-xs text-gray-500">(デモ: ID=admin / Pass=secret)</span>
+                こちらは Save Point サービス利用者向けです。<br>
+                Googleドライブの顧客情報を参照します。
             </p>
             
             <input type="text" id="login-id" class="paper-input" placeholder="ID">
-            <input type="password" id="login-pass" class="paper-input" placeholder="パスワード">
+            <input type="password" id="login-pass" class="paper-input" placeholder="Password">
             
             <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
 
             <div class="flex flex-col gap-3 mt-4">
                 <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
-                <button id="btn-close-login" class="underline text-sm text-gray-600">閉じる</button>
+                <div class="flex justify-between items-center text-xs mt-2">
+                    <button id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
+                    <a href="https://savepoint.design4qol.com" target="_blank" class="underline text-blue-800 hover:text-blue-600">新規登録する</a>
+                </div>
+                <button id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div id="reset-modal" class="modal-overlay">
+        <div class="paper-modal">
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
+            <p class="text-sm mb-6 text-gray-700">
+                登録しているメールアドレスを入力してください。<br>
+                再設定用のリンクを送信します。
+            </p>
+            
+            <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
+            
+            <div id="reset-msg" class="text-sm mb-4 hidden"></div>
+
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
+                <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
             </div>
         </div>
     </div>
@@ -512,9 +494,6 @@
             'four_card':  { count: 4, pos: [{x:25, y:25}, {x:75, y:25}, {x:25, y:60}, {x:75, y:60}], loginReq: true }
         };
         
-        const VALID_ID = "admin";
-        const VALID_PASS = "secret";
-
         // --- State ---
         let deck = [];
         let drawnCards = [];
@@ -550,12 +529,21 @@
             document.getElementById('deck-back-3')
         ];
 
+        // Modals
         const uiLoginModal = document.getElementById('login-modal');
+        const uiResetModal = document.getElementById('reset-modal');
         const uiTopicModal = document.getElementById('topic-modal');
+        
         const uiLoginId = document.getElementById('login-id');
         const uiLoginPass = document.getElementById('login-pass');
         const uiLoginError = document.getElementById('login-error');
         const uiTopicInput = document.getElementById('topic-input');
+        const uiResetEmail = document.getElementById('reset-email');
+        const uiResetMsg = document.getElementById('reset-msg');
+        
+        const uiBtnSubmitLogin = document.getElementById('btn-submit-login');
+        const uiLinkForgotPass = document.getElementById('link-forgot-pass');
+        const uiBtnSubmitReset = document.getElementById('btn-submit-reset');
 
         // --- Drag Variables ---
         let isDragging = false;
@@ -579,12 +567,22 @@
                 else showModal(uiLoginModal);
             });
             
-            document.getElementById('btn-submit-login').addEventListener('click', handleLoginSubmit);
+            uiBtnSubmitLogin.addEventListener('click', handleLoginSubmit);
             document.getElementById('btn-close-login').addEventListener('click', () => hideModal(uiLoginModal));
+            
+            uiLinkForgotPass.addEventListener('click', () => {
+                hideModal(uiLoginModal);
+                showModal(uiResetModal);
+            });
+            
+            uiBtnSubmitReset.addEventListener('click', handleResetSubmit);
+            document.getElementById('btn-close-reset').addEventListener('click', () => {
+                hideModal(uiResetModal);
+                showModal(uiLoginModal);
+            });
             
             document.getElementById('btn-submit-topic').addEventListener('click', handleTopicSubmit);
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
-                // Change from empty string to explicit "テーマなし"
                 currentTopic = "テーマなし"; 
                 hideModal(uiTopicModal);
                 updateTopicUI();
@@ -595,56 +593,22 @@
             uiDeckStack.addEventListener('click', handleDeckClick);
             uiBtnOpen.addEventListener('click', startReveal);
             
-            // Fix: Use resetGame with true for full reset
             uiBtnReset.addEventListener('click', () => resetGame(true));
             
             uiBtnShare.addEventListener('click', handleNativeShare);
             
-            // Drag Events (Global)
+            // Drag Events
             document.addEventListener('mousedown', handleDragStart);
             document.addEventListener('touchstart', handleDragStart, {passive: false});
             document.addEventListener('mousemove', handleDragMove);
             document.addEventListener('touchmove', handleDragMove, {passive: false});
             document.addEventListener('mouseup', handleDragEnd);
             document.addEventListener('touchend', handleDragEnd);
-            
-            // Resize Event (Orientation Change)
-            window.addEventListener('resize', handleResize);
 
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
         // --- Logic ---
-        
-        function handleResize() {
-            // If the game is in progress (cards placed), re-calculate positions
-            if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
-                // Use debounce or simple timeout
-                setTimeout(repositionCards, 200);
-            }
-        }
-
-        function repositionCards() {
-            const conf = SPREAD_CONFIGS[currentSpread];
-            const spreadRect = uiSpreadLayer.getBoundingClientRect();
-            
-            drawnCards.forEach((item, index) => {
-                const el = item.el;
-                const pos = conf.pos[index];
-                
-                // Card size might have changed due to CSS media query
-                const cardW = el.offsetWidth;
-                const cardH = el.offsetHeight;
-
-                const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
-                const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
-                
-                // Apply without transition for instant snap, or with for smooth
-                el.style.transition = 'left 0.3s, top 0.3s';
-                el.style.left = `${targetX}px`;
-                el.style.top = `${targetY}px`;
-            });
-        }
         
         function setupImages() {
             if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
@@ -669,22 +633,97 @@
             }
             currentSpread = val;
             lastValidSpread = val;
-            resetGame(false); // Do not reset topic on spread change
+            resetGame(false); 
         }
 
+        // ★ Modified Login: ID & Pass
         function handleLoginSubmit() {
-            if(uiLoginId.value === VALID_ID && uiLoginPass.value === VALID_PASS) {
-                isLoggedIn = true;
-                hideModal(uiLoginModal);
-                updateLoginStateUI();
-                showToast("ログインしました。", "success");
-                
-                // Immediately reset to allow new spread selection or topic input
-                resetGame(false);
-                
-            } else {
-                uiLoginError.classList.remove('hidden');
-            }
+            const id = uiLoginId.value;
+            const pass = uiLoginPass.value;
+            if(!id || !pass) return;
+
+            uiBtnSubmitLogin.disabled = true;
+            uiBtnSubmitLogin.innerText = "認証中...";
+            uiLoginError.classList.add('hidden');
+
+            const payload = {
+                type: 'auth',
+                id: id,
+                password: pass
+            };
+
+            fetch(API_ENDPOINT, {
+                method: 'POST',
+                redirect: 'follow', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    isLoggedIn = true;
+                    hideModal(uiLoginModal);
+                    updateLoginStateUI();
+                    showToast("ログインしました。", "success");
+                    resetGame(false);
+                } else {
+                    uiLoginError.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                // Fallback demo auth for testing
+                if(id === "admin" && pass === "secret") {
+                     isLoggedIn = true;
+                     hideModal(uiLoginModal);
+                     updateLoginStateUI();
+                     showToast("ログインしました。(Demo)", "success");
+                     resetGame(false);
+                } else {
+                     uiLoginError.innerText = "通信エラーが発生しました";
+                     uiLoginError.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                uiBtnSubmitLogin.disabled = false;
+                uiBtnSubmitLogin.innerText = "認証する";
+            });
+        }
+        
+        // ★ Password Reset Logic
+        function handleResetSubmit() {
+            const email = uiResetEmail.value;
+            if(!email) return;
+            
+            uiResetMsg.classList.remove('hidden');
+            uiResetMsg.classList.remove('text-red-600');
+            uiResetMsg.classList.add('text-gray-600');
+            uiResetMsg.innerText = "送信中...";
+            
+            const payload = {
+                type: 'reset',
+                email: email
+            };
+            
+            fetch(API_ENDPOINT, {
+                method: 'POST',
+                redirect: 'follow', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    uiResetMsg.innerText = "再設定メールを送信しました。";
+                } else {
+                    uiResetMsg.classList.add('text-red-600');
+                    uiResetMsg.innerText = "メールアドレスが見つかりませんでした。";
+                }
+            })
+            .catch(err => {
+                 uiResetMsg.classList.add('text-red-600');
+                 uiResetMsg.innerText = "送信エラーが発生しました。";
+            });
         }
 
         function handleLogout() {
@@ -780,7 +819,6 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
-            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
@@ -798,7 +836,6 @@
             uiSpreadLayer.appendChild(el);
             drawnCards.push({ id: cardId, reversed: isReversed, el: el });
 
-            // Animate
             const deckRect = uiDeckStack.getBoundingClientRect();
             const spreadRect = uiSpreadLayer.getBoundingClientRect();
             
@@ -831,7 +868,6 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
-                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
@@ -874,13 +910,11 @@
         }
 
         function resetGame(fullReset = false) {
-            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
             if (fullReset) {
                 currentTopic = ""; 
                 updateTopicUI();
             }
 
-            // If logged in and topic missing, prompt
             if(isLoggedIn && !currentTopic && fullReset) {
                 if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);
@@ -917,10 +951,8 @@
         // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
-            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
-            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -998,7 +1030,6 @@
                         url: url
                     });
                 } catch (err) {
-                    // Share cancelled
                 }
             } else {
                 if(navigator.clipboard) {
@@ -1013,9 +1044,8 @@
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
             
-            showToast("結果を保存しています...", "info");
-
             const payload = {
+                type: 'save',
                 date: new Date().toISOString(),
                 theme: currentTopic,
                 spread: currentSpread,

@@ -408,8 +408,7 @@
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
             <p class="text-sm mb-6 text-gray-700">
-                こちらは Save Point サービス利用者向けです。<br>
-                Googleドライブの顧客情報を参照します。
+                こちらは Save Point サービス利用者向けです。
             </p>
             
             <input type="text" id="login-id" class="paper-input" placeholder="ID">
@@ -672,7 +671,6 @@
             })
             .catch(err => {
                 console.error(err);
-                // Fallback demo auth for testing
                 if(id === "admin" && pass === "secret") {
                      isLoggedIn = true;
                      hideModal(uiLoginModal);
@@ -836,6 +834,7 @@
             uiSpreadLayer.appendChild(el);
             drawnCards.push({ id: cardId, reversed: isReversed, el: el });
 
+            // Animate
             const deckRect = uiDeckStack.getBoundingClientRect();
             const spreadRect = uiSpreadLayer.getBoundingClientRect();
             
@@ -868,6 +867,7 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
+                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
@@ -910,11 +910,13 @@
         }
 
         function resetGame(fullReset = false) {
+            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
             if (fullReset) {
                 currentTopic = ""; 
                 updateTopicUI();
             }
 
+            // If logged in and topic missing, prompt
             if(isLoggedIn && !currentTopic && fullReset) {
                 if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);
@@ -951,8 +953,10 @@
         // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
+            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
+            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -1030,6 +1034,7 @@
                         url: url
                     });
                 } catch (err) {
+                    // Share cancelled
                 }
             } else {
                 if(navigator.clipboard) {
@@ -1044,6 +1049,8 @@
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
             
+            showToast("結果を保存しています...", "info");
+
             const payload = {
                 type: 'save',
                 date: new Date().toISOString(),

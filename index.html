@@ -349,8 +349,8 @@
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Added bottom-0 to place it exactly at the bottom of main area -->
-        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
+        <!-- Fixed: Set to bottom-0 to align with bottom of main area (just above footer) -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-40 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
@@ -363,12 +363,12 @@
     </main>
 
     <!-- Control Footer -->
-    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50">
+    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50 h-20">
         <div class="flex flex-wrap justify-between items-center gap-2 max-w-md mx-auto">
             
             <div class="relative flex-grow">
                 <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">
-                    <option value="one_oracle">ワンオラクル (1枚) [無料]</option>
+                    <option value="one_oracle">ワンオラクル (1枚)</option>
                     <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
                     <option value="two_mind">🔒 ツーマインド (2枚)</option>
                     <option value="simple_cross">🔒 シンプルクロス (2枚)</option>
@@ -690,7 +690,6 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
-            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
@@ -717,7 +716,6 @@
 
             el.style.left = `${startX}px`;
             el.style.top = `${startY}px`;
-            // Make sure it starts visible
             el.style.opacity = '1';
 
             const pos = conf.pos[pickCount];

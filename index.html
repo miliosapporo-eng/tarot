@@ -59,7 +59,8 @@
             cursor: grab;
             opacity: 0; /* JS will change this to 1 */
             z-index: 10;
-            /* Allow touch actions only when NOT finished, handled in JS */
+            /* ★重要: クリックイベントを受け付ける設定を追加 */
+            pointer-events: auto;
             touch-action: none; 
         }
         
@@ -75,6 +76,7 @@
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
             border-radius: 8px; /* Slightly more rounded for larger cards */
             box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
+            pointer-events: none; /* Let clicks pass to card-scene */
         }
 
         .card-face {
@@ -120,6 +122,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            z-index: 1;
         }
 
         #spread-layer {
@@ -128,7 +131,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: none; /* Allows clicking through empty space */
             z-index: 20;
         }
 
@@ -824,7 +827,6 @@
             currentDragCard.style.transition = 'none';
 
             // Calculate offset relative to current position
-            const rect = currentDragCard.getBoundingClientRect();
             // We use style.left/top so we need to parse them
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;

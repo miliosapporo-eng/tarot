@@ -324,6 +324,7 @@
 
         <!-- Deck Area -->
         <div id="deck-area">
+            <!-- Visual stack of cards -->
             <div id="deck-stack" class="relative w-full h-full cursor-pointer">
                 <!-- Multiple dummy cards -->
                 <div class="deck-card" style="transform: translate(0, 0);">
@@ -443,9 +444,9 @@
         // ★ Google Apps Script Web App URL
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
 
-        const TOTAL_CARDS = 22;
-        const SHUFFLE_CARD_COUNT = 40;
+        const TOTAL_CARDS = 22; // Only Major Arcana (0-21)
         
+        // Simplified Spreads (Max 4 cards)
         const SPREAD_CONFIGS = {
             'one_oracle': { count: 1, pos: [{x:50, y:40}], loginReq: false },
             'two_oracle': { count: 2, pos: [{x:35, y:40}, {x:65, y:40}], loginReq: true },
@@ -458,6 +459,7 @@
         const VALID_ID = "admin";
         const VALID_PASS = "secret";
 
+        // --- State ---
         let deck = [];
         let drawnCards = [];
         let currentSpread = 'one_oracle';
@@ -501,6 +503,7 @@
 
         // --- Init ---
         function init() {
+            // Set Date
             const d = new Date();
             uiDate.innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} 発行`;
 
@@ -554,7 +557,7 @@
             
             if (conf.loginReq && !isLoggedIn) {
                 showModal(uiLoginModal);
-                uiSpreadSelect.value = lastValidSpread;
+                uiSpreadSelect.value = lastValidSpread; // Revert
                 return;
             }
             currentSpread = val;
@@ -577,6 +580,7 @@
             if(confirm("ログアウトしますか？")) {
                 isLoggedIn = false;
                 updateLoginStateUI();
+                // Reset to free spread
                 currentSpread = 'one_oracle';
                 lastValidSpread = 'one_oracle';
                 uiSpreadSelect.value = 'one_oracle';
@@ -588,6 +592,7 @@
             const btn = document.getElementById('btn-login-header');
             if(isLoggedIn) {
                 btn.innerText = "ログアウト";
+                // Unlock dropdown visual
                 const opts = uiSpreadSelect.options;
                 for(let i=0; i<opts.length; i++) {
                     opts[i].text = opts[i].text.replace("🔒 ", "").replace(" [Login]", "").replace("[要ログイン]", "");
@@ -618,6 +623,7 @@
         function startShuffle() {
             if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
             
+            // Check Topic Requirement for logged in users starting a new game
             if(isLoggedIn && currentState === 'IDLE' && !currentTopic) {
                 uiTopicInput.value = "";
                 showModal(uiTopicModal);
@@ -629,6 +635,7 @@
             uiBtnShuffle.disabled = true;
             uiSpreadSelect.disabled = true;
             
+            // Reset board
             uiSpreadLayer.innerHTML = '';
             drawnCards = [];
             pickCount = 0;
@@ -647,14 +654,16 @@
             if (pickCount >= conf.count) return;
 
             currentState = 'PICKING';
-            uiDeckStack.classList.remove('shuffling');
+            uiDeckStack.classList.remove('shuffling'); // Stop shuffle momentarily
 
+            // Draw logic
             if(deck.length === 0) populateDeck();
             const rIndex = Math.floor(Math.random() * deck.length);
             const cardId = deck[rIndex];
             deck.splice(rIndex, 1);
             const isReversed = Math.random() < 0.5;
 
+            // Create Card Element
             const el = document.createElement('div');
             el.className = 'card-scene';
             // ★ FIX: Ensure visibility
@@ -663,6 +672,7 @@
             el.innerHTML = `
                 <div class="card-obj">
                     <div class="card-face front">
+                        <!-- Reverse logic: rotate image itself if reversed -->
                         <img src="${IMG_FOLDER}${cardId}${IMG_EXT}" 
                              style="transform: ${isReversed ? 'rotate(180deg)' : 'none'};"
                              onerror="this.src='https://placehold.co/100x174/eee/333?text=${cardId}'">
@@ -750,6 +760,7 @@
         }
 
         function resetGame() {
+            // If logged in, ask topic again
             if(isLoggedIn) {
                 uiInputTopic.value = "";
                 showModal(uiTopicModal);
@@ -779,6 +790,8 @@
             if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
+        // --- Utils ---
+
         function showModal(el) {
             el.classList.add('active');
         }
@@ -798,6 +811,7 @@
             }, 3000);
         }
 
+        // --- Native Share ---
         async function handleNativeShare() {
             const url = "https://tarot.design4qol.com/";
             const text = `🔮 今日の運命 (The Daily Oracle)\nTheme: ${currentTopic || 'My Destiny'}`;
@@ -813,6 +827,7 @@
                     // Share cancelled
                 }
             } else {
+                // Fallback
                 if(navigator.clipboard) {
                     navigator.clipboard.writeText(`${text} ${url}`);
                     showToast("リンクをクリップボードにコピーしました！");
@@ -822,6 +837,7 @@
             }
         }
 
+        // --- Backend ---
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
             
@@ -867,6 +883,7 @@
             }
         }
 
+        // Run
         init();
 
     </script>

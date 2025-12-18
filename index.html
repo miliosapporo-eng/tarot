@@ -303,6 +303,11 @@
             50% { opacity: 0; }
         }
 
+        /* Guide Container Position */
+        #guide-container {
+            padding-bottom: 0 !important; 
+        }
+
     </style>
 </head>
 <body>
@@ -350,7 +355,6 @@
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Positioned bottom-0 to sit exactly on top of the footer -->
         <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
@@ -426,7 +430,7 @@
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
             <p class="text-sm mb-6 text-gray-700 text-left">
                 今日あなたは何を知りたいですか？<br>
-                結果はMilioへ記録・送信されます。
+                結果は運営元へ記録・送信されます。
             </p>
             
             <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
@@ -538,7 +542,8 @@
             
             document.getElementById('btn-submit-topic').addEventListener('click', handleTopicSubmit);
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
-                currentTopic = "";
+                // Change from empty string to explicit "テーマなし"
+                currentTopic = "テーマなし"; 
                 hideModal(uiTopicModal);
                 updateTopicUI();
                 setStatus("スプレッドを選んでシャッフルしてください。");
@@ -696,6 +701,7 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
+            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
@@ -746,6 +752,7 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
+                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
@@ -799,7 +806,7 @@
             currentState = 'IDLE';
             populateDeck();
             
-            pickCount = 0; 
+            pickCount = 0; // Explicit reset
 
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');
@@ -823,8 +830,10 @@
         // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
+            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
+            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -932,7 +941,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                showToast("Milioへ送信完了。解説をお待ちください。", "success");
+                showToast("運営へ送信完了。解説をお待ちください。", "success");
             }).catch(e => {
                 console.error(e);
             });

@@ -56,6 +56,7 @@
             cursor: grab;
             opacity: 0;
             z-index: 10;
+            /* ★重要: クリックイベントを受け付ける設定 */
             pointer-events: auto;
             touch-action: none; 
         }
@@ -302,6 +303,12 @@
             50% { opacity: 0; }
         }
 
+        /* Adjust Guide Container to stick to bottom of main area */
+        #guide-container {
+            /* padding-bottom 0 makes it sit right on the line */
+            padding-bottom: 0 !important; 
+        }
+
     </style>
 </head>
 <body>
@@ -349,8 +356,8 @@
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Set to bottom-0 to align with bottom of main area (just above footer) -->
-        <div id="guide-container" class="absolute bottom-0 right-0 z-40 p-2 md:p-4 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
+        <!-- Fixed: Positioned bottom-0 to sit directly on the footer line -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
                 <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
@@ -793,6 +800,9 @@
             drawnCards = [];
             currentState = 'IDLE';
             populateDeck();
+            
+            // Explicitly Reset pickCount
+            pickCount = 0;
 
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');

@@ -14,9 +14,7 @@
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            /* カードサイズを約2.5倍に拡大 
-               元: 70px/120px -> 175px/300px (Base)
-            */
+            /* カードサイズを約2.5倍に拡大 */
             --card-w: 160px;
             --card-h: 274px;
         }
@@ -24,7 +22,6 @@
         /* Mobile Optimization */
         @media (min-width: 375px) {
             :root {
-                /* 元: 80px/137px -> 約2.5倍 */
                 --card-w: 180px;
                 --card-h: 308px;
             }
@@ -57,9 +54,8 @@
             position: absolute;
             transform-style: preserve-3d;
             cursor: grab;
-            opacity: 0; /* JS will change this to 1 */
+            opacity: 0;
             z-index: 10;
-            /* ★重要: クリックイベントを受け付ける設定を追加 */
             pointer-events: auto;
             touch-action: none; 
         }
@@ -74,9 +70,9 @@
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            border-radius: 8px; /* Slightly more rounded for larger cards */
+            border-radius: 8px;
             box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
-            pointer-events: none; /* Let clicks pass to card-scene */
+            pointer-events: none;
         }
 
         .card-face {
@@ -131,7 +127,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Allows clicking through empty space */
+            pointer-events: none;
             z-index: 20;
         }
 
@@ -317,7 +313,7 @@
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
-        <!-- Title Image (Adjusted: Tighter height) -->
+        <!-- Title Image -->
         <img src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
 
         <!-- Topic Display -->
@@ -349,8 +345,7 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
-            <!-- Added ID for toggling visibility -->
-            <div id="deck-label" class="text-center mt-2 text-xs font-serif opacity-70">山札</div>
+            <!-- Removed deck label -->
         </div>
 
         <!-- Guide Character & Bubble -->
@@ -372,12 +367,12 @@
             
             <div class="relative flex-grow">
                 <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">
-                    <option value="one_oracle">ワンオラクル (1枚) [無料]</option>
-                    <option value="two_oracle">ツーオラクル (2枚) [要ログイン]</option>
-                    <option value="two_mind">ツーマインド (2枚) [要ログイン]</option>
-                    <option value="simple_cross">シンプルクロス (2枚) [要ログイン]</option>
-                    <option value="three_card">スリーカード (3枚) [要ログイン]</option>
-                    <option value="four_card">フォーカード (4枚) [要ログイン]</option>
+                    <option value="one_oracle">ワンオラクル (1枚)</option>
+                    <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
+                    <option value="two_mind">🔒 ツーマインド (2枚)</option>
+                    <option value="simple_cross">🔒 シンプルクロス (2枚)</option>
+                    <option value="three_card">🔒 スリーカード (3枚)</option>
+                    <option value="four_card">🔒 フォーカード (4枚)</option>
                 </select>
                 <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                     <i class="fa-solid fa-caret-down"></i>
@@ -506,8 +501,6 @@
             document.getElementById('deck-back-2'),
             document.getElementById('deck-back-3')
         ];
-        // Added Deck Label Element
-        const uiDeckLabel = document.getElementById('deck-label');
 
         const uiLoginModal = document.getElementById('login-modal');
         const uiTopicModal = document.getElementById('topic-modal');
@@ -618,14 +611,22 @@
 
         function updateLoginStateUI() {
             const btn = document.getElementById('btn-login-header');
+            const opts = uiSpreadSelect.options;
+
             if(isLoggedIn) {
                 btn.innerText = "ログアウト";
-                const opts = uiSpreadSelect.options;
                 for(let i=0; i<opts.length; i++) {
-                    opts[i].text = opts[i].text.replace("🔒 ", "").replace(" [Login]", "").replace("[要ログイン]", "");
+                    opts[i].text = opts[i].text.replace("🔒 ", "");
                 }
             } else {
                 btn.innerText = "ログイン";
+                 for(let i=0; i<opts.length; i++) {
+                    const val = opts[i].value;
+                    const conf = SPREAD_CONFIGS[val];
+                    if (conf && conf.loginReq && !opts[i].text.includes("🔒")) {
+                        opts[i].text = "🔒 " + opts[i].text;
+                    }
+                }
             }
         }
 
@@ -739,9 +740,8 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
-                // ★ Hide Deck and Label when done
+                // Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
-                uiDeckLabel.classList.add('hidden');
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
             } else {
@@ -783,6 +783,7 @@
         }
 
         function resetGame() {
+            // If logged in, ask topic again
             if(isLoggedIn) {
                 uiInputTopic.value = "";
                 showModal(uiTopicModal);
@@ -808,9 +809,6 @@
             uiSpreadSelect.disabled = false;
             uiDeckStack.classList.remove('hidden');
             uiDeckStack.classList.remove('shuffling');
-            
-            // ★ Show Label on Reset
-            uiDeckLabel.classList.remove('hidden');
             
             if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
@@ -899,6 +897,7 @@
                         url: url
                     });
                 } catch (err) {
+                    // Share cancelled
                 }
             } else {
                 if(navigator.clipboard) {

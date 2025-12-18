@@ -33,7 +33,7 @@
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            /* Allow default touch actions unless overridden */
+            touch-action: none;
         }
 
         /* UI Elements */
@@ -475,7 +475,7 @@
         const BACK_IMG = 'back.jpg';   
         const SEER_IMG = 'seer.png'; 
         
-        // ★ IMPORTANT: Google Apps Script Web App URL (Pre-filled)
+        // ★ IMPORTANT: Google Apps Script Web App URL
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyFm-zum4hO5_chb7SDm95gAIWH5JHuxBjHjLDOojDFv8rp5YEk12HuZt-eEN2tEyRN/exec";
 
         const POSITIVE_TITLES = [
@@ -826,11 +826,12 @@
                 cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
             };
 
+            // Use text/plain to avoid CORS preflight issues with GAS
             fetch(API_ENDPOINT, {
                 method: 'POST',
                 mode: 'no-cors', 
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'text/plain' 
                 },
                 body: JSON.stringify(data)
             })

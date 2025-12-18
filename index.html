@@ -303,11 +303,6 @@
             50% { opacity: 0; }
         }
 
-        /* Guide Container Position - Moved above footer */
-        #guide-container {
-            padding-bottom: 0 !important; 
-        }
-
     </style>
 </head>
 <body>
@@ -431,7 +426,7 @@
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
             <p class="text-sm mb-6 text-gray-700 text-left">
                 今日あなたは何を知りたいですか？<br>
-                結果は運営元へ記録・送信されます。
+                結果はMilioへ記録・送信されます。
             </p>
             
             <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
@@ -701,7 +696,6 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
-            // ★ FIX: Ensure visibility
             el.style.opacity = '1';
             
             el.innerHTML = `
@@ -728,7 +722,6 @@
 
             el.style.left = `${startX}px`;
             el.style.top = `${startY}px`;
-            // Make sure it starts visible
             el.style.opacity = '1';
 
             const pos = conf.pos[pickCount];
@@ -753,7 +746,6 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
-                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
@@ -807,7 +799,7 @@
             currentState = 'IDLE';
             populateDeck();
             
-            pickCount = 0; // Explicit reset
+            pickCount = 0; 
 
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');
@@ -831,10 +823,8 @@
         // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
-            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
-            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -942,7 +932,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                showToast("運営へ送信完了。解説をお待ちください。", "success");
+                showToast("Milioへ送信完了。解説をお待ちください。", "success");
             }).catch(e => {
                 console.error(e);
             });

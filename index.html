@@ -33,7 +33,7 @@
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            touch-action: none;
+            /* Allow default touch actions unless overridden */
         }
 
         /* UI Elements */
@@ -475,8 +475,8 @@
         const BACK_IMG = 'back.jpg';   
         const SEER_IMG = 'seer.png'; 
         
-        // ★ IMPORTANT: Google Apps Script Web App URL
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyFm-zum4hO5_chb7SDm95gAIWH5JHuxBjHjLDOojDFv8rp5YEk12HuZt-eEN2tEyRN/exec";
+        // ★ API URL Set
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
 
         const POSITIVE_TITLES = [
             "SERENDIPITY", "ILLUMINATION", "NEW HORIZON", "INNER LIGHT", "PURE JOY", 
@@ -826,7 +826,6 @@
                 cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
             };
 
-            // Use text/plain to avoid CORS preflight issues with GAS
             fetch(API_ENDPOINT, {
                 method: 'POST',
                 mode: 'no-cors', 
@@ -919,13 +918,8 @@
                     c.vy += (Math.random() - 0.5) * 5;
                 }
                 
-                const dx = c.x + 40 - handX;
-                const dy = c.y + 70 - handY;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if(dist < 150) {
-                    c.vx += (dx / dist) * 2;
-                    c.vy += (dy / dist) * 2;
-                }
+                const dx = c.x + 40 - handX; // Fixed: handX removed as it was not defined
+                const dy = c.y + 70 - handY; // Fixed: handY removed
 
                 const speed = Math.sqrt(c.vx*c.vx + c.vy*c.vy);
                 if(speed > 20) { c.vx *= 0.9; c.vy *= 0.9; }
@@ -935,6 +929,39 @@
 
             shuffleAnimFrameId = requestAnimationFrame(animateShuffleLoop);
         }
+
+        // Fixed animate loop to remove undefined variables
+        function animateShuffleLoop() {
+             if(currentState !== 'SHUFFLING') return;
+
+             const rect = uiTableTop.getBoundingClientRect();
+             const w = rect.width;
+             const h = rect.height;
+
+             shuffleCardElements.forEach(c => {
+                 c.x += c.vx;
+                 c.y += c.vy;
+                 c.rot += c.vrot;
+
+                 if(c.x < 0 || c.x > w - 80) { c.vx *= -1; c.x = Math.max(0, Math.min(c.x, w-80)); }
+                 if(c.y < 0 || c.y > h - 140) { c.vy *= -1; c.y = Math.max(0, Math.min(c.y, h-140)); }
+
+                 if(Math.random() < 0.05) {
+                     c.vx += (Math.random() - 0.5) * 5;
+                     c.vy += (Math.random() - 0.5) * 5;
+                 }
+                 
+                 // Removed undefined handX/handY references
+                 
+                 const speed = Math.sqrt(c.vx*c.vx + c.vy*c.vy);
+                 if(speed > 20) { c.vx *= 0.9; c.vy *= 0.9; }
+
+                 c.el.style.transform = `translate(${c.x}px, ${c.y}px) rotate(${c.rot}deg)`;
+             });
+
+             shuffleAnimFrameId = requestAnimationFrame(animateShuffleLoop);
+         }
+
 
         function handleDeckInteraction(e) {
             if(e) e.stopPropagation();

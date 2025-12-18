@@ -19,7 +19,7 @@
             --card-h: 274px;
         }
 
-        /* Mobile Optimization (Portrait) */
+        /* Mobile Optimization */
         @media (min-width: 375px) {
             :root {
                 --card-w: 180px;
@@ -27,31 +27,24 @@
             }
         }
 
-        /* ★ Landscape Optimization (Horizontal Mobile) */
+        /* Landscape Optimization */
         @media (orientation: landscape) and (max-height: 600px) {
             :root {
-                /* 横画面ではカードを小さくして一覧性を高める */
                 --card-w: 80px; 
                 --card-h: 137px;
             }
-            /* タイトル画像を消してスペース確保 */
-            #title-img {
-                display: none !important;
-            }
-            /* ヘッダーをコンパクトに */
+            #title-img { display: none !important; }
             header {
                 padding-top: 0.25rem !important;
                 padding-bottom: 0.25rem !important;
                 height: auto !important;
                 min-height: 2.5rem;
             }
-            /* スクロールしやすくする */
             #table-top {
-                align-items: flex-start !important; /* 上詰め */
+                align-items: flex-start !important;
                 padding-top: 2rem;
-                padding-bottom: 4rem; /* フッター分 */
+                padding-bottom: 4rem;
             }
-            /* デッキ位置調整 */
             #deck-area {
                 bottom: 0.5rem !important;
                 transform: translateX(-50%) scale(0.8) !important;
@@ -87,9 +80,10 @@
             cursor: grab;
             opacity: 0;
             z-index: 10;
-            /* ★重要: クリックイベントを受け付ける設定 */
             pointer-events: auto;
             touch-action: none; 
+            /* Smooth transition for resize adjustment */
+            transition: width 0.3s, height 0.3s;
         }
         
         .card-scene:active {
@@ -145,14 +139,12 @@
             position: relative;
             flex-grow: 1;
             width: 100%;
-            /* ★ Allow scrolling */
-            overflow: auto; 
+            overflow: auto; /* Allow Scroll */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1;
-            /* Hide scrollbar but allow scroll */
             scrollbar-width: none; 
             -ms-overflow-style: none;
         }
@@ -166,7 +158,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Ensure layer is big enough */
             min-width: 100%;
             min-height: 100%;
             pointer-events: none;
@@ -182,7 +173,6 @@
             width: var(--card-w);
             height: var(--card-h);
             z-index: 30;
-            transition: all 0.3s;
         }
 
         .deck-card {
@@ -245,7 +235,6 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             position: relative;
-            /* Scrollable modal content for small landscape screens */
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -348,7 +337,7 @@
             50% { opacity: 0; }
         }
 
-        /* Guide Container Position - Moved above footer */
+        /* Guide Container Position */
         #guide-container {
             padding-bottom: 0 !important; 
         }
@@ -364,7 +353,7 @@
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
-        <!-- Title Image (Added ID for toggle) -->
+        <!-- Title Image -->
         <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
 
         <!-- Topic Display -->
@@ -400,7 +389,6 @@
         </div>
 
         <!-- Guide Character & Bubble -->
-        <!-- Fixed: Positioned bottom-0 to sit exactly on top of the footer -->
         <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
             <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
                 <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
@@ -588,7 +576,6 @@
             
             document.getElementById('btn-submit-topic').addEventListener('click', handleTopicSubmit);
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
-                // Change from empty string to explicit "テーマなし"
                 currentTopic = "テーマなし"; 
                 hideModal(uiTopicModal);
                 updateTopicUI();
@@ -599,7 +586,6 @@
             uiDeckStack.addEventListener('click', handleDeckClick);
             uiBtnOpen.addEventListener('click', startReveal);
             
-            // Fix: Use resetGame with true for full reset
             uiBtnReset.addEventListener('click', () => resetGame(true));
             
             uiBtnShare.addEventListener('click', handleNativeShare);
@@ -611,11 +597,48 @@
             document.addEventListener('touchmove', handleDragMove, {passive: false});
             document.addEventListener('mouseup', handleDragEnd);
             document.addEventListener('touchend', handleDragEnd);
+            
+            // Resize Event (Orientation Change)
+            window.addEventListener('resize', handleResize);
 
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
         // --- Logic ---
+        
+        function handleResize() {
+            // If the game is in progress (cards placed), re-calculate positions
+            if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
+                // Use debounce or simple timeout
+                setTimeout(repositionCards, 200);
+            }
+        }
+
+        function repositionCards() {
+            const conf = SPREAD_CONFIGS[currentSpread];
+            const spreadRect = uiSpreadLayer.getBoundingClientRect();
+            
+            // Re-read card dimensions from CSS or DOM
+            // Since we use CSS media queries, reading offsetWidth from an existing card is best,
+            // or creating a temp one. But drawnCards elements already exist.
+            
+            drawnCards.forEach((item, index) => {
+                const el = item.el;
+                const pos = conf.pos[index];
+                
+                // Card size might have changed due to CSS media query
+                const cardW = el.offsetWidth;
+                const cardH = el.offsetHeight;
+
+                const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
+                const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
+                
+                // Apply without transition for instant snap, or with for smooth
+                el.style.transition = 'left 0.3s, top 0.3s';
+                el.style.left = `${targetX}px`;
+                el.style.top = `${targetY}px`;
+            });
+        }
         
         function setupImages() {
             if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
@@ -640,7 +663,7 @@
             }
             currentSpread = val;
             lastValidSpread = val;
-            resetGame(false); // Do not reset topic on spread change
+            resetGame(false); 
         }
 
         function handleLoginSubmit() {
@@ -800,6 +823,7 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
+                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
                 
                 setStatus("カードが揃いました。「開く」を押してください。");
@@ -885,8 +909,10 @@
         // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
+            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
+            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -896,8 +922,11 @@
             currentDragCard = targetEl;
 
             currentDragCard.style.zIndex = 100;
+            // Temporary disable transition for immediate follow
             currentDragCard.style.transition = 'none';
 
+            // Calculate offset relative to current position
+            // We use style.left/top so we need to parse them
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;
 
@@ -964,6 +993,7 @@
                         url: url
                     });
                 } catch (err) {
+                    // Share cancelled
                 }
             } else {
                 if(navigator.clipboard) {

@@ -82,8 +82,10 @@
         }
         .deck-card {
             position: absolute; inset: 0; border-radius: 6px;
-            border: 1px solid #333; background: #333;
+            border: 1px solid #333;
+            /* background: #333; <-- 削除 (画像を表示するため黒背景は不要) */
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            overflow: hidden; /* 追加: 画像が角丸からはみ出さないように */
         }
         .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
         .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
@@ -109,7 +111,7 @@
             padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
             box-shadow: 10px 10px 0 rgba(0,0,0,0.5); transform: scale(0.95);
             transition: transform 0.2s; max-height: 90vh; overflow-y: auto;
-            position: relative; /* ×ボタン配置用 */
+            position: relative;
         }
         .modal-overlay.active .paper-modal { transform: scale(1); }
         
@@ -129,7 +131,6 @@
             color: var(--ink-black); outline: none; margin-bottom: 1rem; border-radius: 0;
         }
 
-        /* 閉じる(×)ボタン */
         .btn-close-x {
             position: absolute; top: 10px; right: 15px;
             background: transparent; border: none; font-size: 1.5rem;
@@ -177,9 +178,15 @@
         
         <div id="deck-area">
             <div id="deck-stack" class="relative w-full h-full cursor-pointer">
-                <div class="deck-card" style="transform: translate(0,0)"></div>
-                <div class="deck-card" style="transform: translate(3px,3px)"></div>
-                <div class="deck-card" style="transform: translate(6px,6px)"><img id="deck-top-img" src="" class="w-full h-full object-cover rounded-md"></div>
+                <div class="deck-card" style="transform: translate(0,0)">
+                    <img class="w-full h-full object-cover rounded-md deck-back-img">
+                </div>
+                <div class="deck-card" style="transform: translate(3px,3px)">
+                    <img class="w-full h-full object-cover rounded-md deck-back-img">
+                </div>
+                <div class="deck-card" style="transform: translate(6px,6px)">
+                    <img id="deck-top-img" class="w-full h-full object-cover rounded-md deck-back-img">
+                </div>
             </div>
         </div>
 
@@ -235,7 +242,6 @@
     <div id="reset-modal" class="modal-overlay">
         <div class="paper-modal">
             <button type="button" id="btn-x-reset" class="btn-close-x">×</button>
-            
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
             <p class="text-sm mb-6 text-gray-700">
                 登録しているメールアドレスを入力してください。<br>
@@ -331,7 +337,11 @@
 
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP') + " 発行";
             ui.guideImg.src = IMG_PATH + SEER_IMG;
-            document.getElementById('deck-top-img').src = IMG_PATH + BACK_IMG;
+            
+            // 修正: deck-top-imgだけでなく、全ての.deck-back-imgに画像をセット
+            document.querySelectorAll('.deck-back-img').forEach(img => {
+                img.src = IMG_PATH + BACK_IMG;
+            });
             
             populateDeck(); 
             restoreSession(); 
@@ -346,16 +356,16 @@
             document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
             ui.formLogin.addEventListener('submit', (e) => { e.preventDefault(); tryLogin(); });
             
-            // Password Reset (修正済み)
+            // Password Reset
             document.getElementById('link-forgot-pass').addEventListener('click', () => { 
-                hide(ui.modalLogin); // ログインモーダルを閉じる
-                show(ui.modalReset); // リセットモーダルを開く
+                hide(ui.modalLogin); 
+                show(ui.modalReset); 
             });
             
             // リセットモーダルの ×ボタン
             document.getElementById('btn-x-reset').addEventListener('click', () => hide(ui.modalReset));
             
-            // リセットモーダルの TOPに戻るボタン (モーダルを閉じる = TOPに戻る)
+            // リセットモーダルの TOPに戻るボタン
             document.getElementById('btn-back-top').addEventListener('click', () => hide(ui.modalReset));
 
             ui.formReset.addEventListener('submit', (e) => { e.preventDefault(); tryReset(); });

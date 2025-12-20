@@ -14,7 +14,6 @@
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            /* カードサイズ */
             --card-w: 160px;
             --card-h: 274px;
         }
@@ -64,13 +63,6 @@
             touch-action: none;
         }
 
-        /* Typography */
-        .headline {
-            font-family: 'Playfair Display', serif;
-            letter-spacing: -0.02em;
-        }
-
-        /* 3D Card Scene */
         .card-scene {
             width: var(--card-w);
             height: var(--card-h);
@@ -80,14 +72,12 @@
             cursor: grab;
             opacity: 0;
             z-index: 10;
-            /* ★重要: クリックイベントを受け付ける設定 */
             pointer-events: auto;
             touch-action: none; 
+            transition: width 0.3s, height 0.3s;
         }
         
-        .card-scene:active {
-            cursor: grabbing;
-        }
+        .card-scene:active { cursor: grabbing; }
 
         .card-obj {
             width: 100%;
@@ -129,11 +119,8 @@
             object-fit: cover;
         }
 
-        .card-obj.is-open {
-            transform: rotateY(180deg);
-        }
+        .card-obj.is-open { transform: rotateY(180deg); }
 
-        /* Layout Areas */
         #table-top {
             position: relative;
             flex-grow: 1;
@@ -147,9 +134,7 @@
             scrollbar-width: none; 
             -ms-overflow-style: none;
         }
-        #table-top::-webkit-scrollbar { 
-            display: none; 
-        }
+        #table-top::-webkit-scrollbar { display: none; }
 
         #spread-layer {
             position: absolute;
@@ -157,11 +142,12 @@
             left: 0;
             width: 100%;
             height: 100%;
+            min-width: 100%;
+            min-height: 100%;
             pointer-events: none;
             z-index: 20;
         }
 
-        /* Deck */
         #deck-area {
             position: absolute;
             bottom: 2rem;
@@ -194,12 +180,8 @@
             100% { transform: translateX(0) rotate(0); }
         }
 
-        .shuffling .deck-card:nth-child(odd) {
-            animation: shuffleShake 0.15s infinite alternate;
-        }
-        .shuffling .deck-card:nth-child(even) {
-            animation: shuffleShake 0.15s infinite alternate-reverse;
-        }
+        .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
+        .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
 
         /* Modals */
         .modal-overlay {
@@ -218,10 +200,7 @@
             transition: opacity 0.3s;
             backdrop-filter: grayscale(100%) blur(2px);
         }
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .paper-modal {
             background: var(--paper-bg);
             border: 4px double var(--ink-black);
@@ -236,9 +215,7 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        .modal-overlay.active .paper-modal {
-            transform: scale(1);
-        }
+        .modal-overlay.active .paper-modal { transform: scale(1); }
         
         .paper-btn {
             background: var(--ink-black);
@@ -252,15 +229,8 @@
             transition: all 0.2s;
             box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
         }
-        .paper-btn:active {
-            transform: translate(2px, 2px);
-            box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
-        }
-        .paper-btn.secondary {
-            background: transparent;
-            color: var(--ink-black);
-            border: 2px solid var(--ink-black);
-        }
+        .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+        .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
 
         .paper-input {
             width: 100%;
@@ -276,7 +246,6 @@
             border-radius: 0;
         }
 
-        /* Toast */
         #toast-container {
             position: fixed;
             top: 10px;
@@ -305,7 +274,6 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        /* Header Date Line */
         .date-line {
             padding: 4px 0;
             margin-bottom: 10px;
@@ -317,28 +285,16 @@
             text-transform: uppercase;
         }
         
-        /* Guide Bubble */
-        .bubble-pop {
-            animation: popIn 0.3s ease-out forwards;
-        }
+        .bubble-pop { animation: popIn 0.3s ease-out forwards; }
         @keyframes popIn {
             0% { transform: scale(0); opacity: 0; }
             80% { transform: scale(1.1); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .typing-cursor::after {
-            content: '|';
-            animation: blink 1s infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+        .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* Guide Container Position - Moved above footer */
-        #guide-container {
-            padding-bottom: 0 !important; 
-        }
+        #guide-container { padding-bottom: 0 !important; }
 
     </style>
 </head>
@@ -351,10 +307,8 @@
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
-        <!-- Title Image -->
         <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm transition-all duration-300">
 
-        <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
             <span class="text-xs text-gray-600 mr-2">テーマ:</span>
             <span id="topic-text-content" class="font-bold text-ink-red truncate text-sm"></span>
@@ -370,9 +324,7 @@
 
         <!-- Deck Area -->
         <div id="deck-area">
-            <!-- Visual stack of cards -->
             <div id="deck-stack" class="relative w-full h-full cursor-pointer">
-                <!-- Multiple dummy cards -->
                 <div class="deck-card" style="transform: translate(0, 0);">
                     <img id="deck-back-1" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
@@ -383,7 +335,6 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
-            <!-- Removed deck label -->
         </div>
 
         <!-- Guide Character & Bubble -->
@@ -417,18 +368,9 @@
                 </div>
             </div>
 
-            <button id="btn-shuffle" class="paper-btn">
-                シャッフル
-            </button>
-            
-            <button id="btn-open" class="paper-btn secondary" disabled style="opacity: 0.5;">
-                開く
-            </button>
-            
-            <button id="btn-reset" class="paper-btn secondary hidden">
-                もう一度
-            </button>
-
+            <button id="btn-shuffle" class="paper-btn">シャッフル</button>
+            <button id="btn-open" class="paper-btn secondary" disabled style="opacity: 0.5;">開く</button>
+            <button id="btn-reset" class="paper-btn secondary hidden">もう一度</button>
             <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden items-center gap-2">
                 <i class="fa-solid fa-share-nodes"></i>
             </button>
@@ -443,8 +385,7 @@
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
             
-            <!-- ★ ID Input Restored -->
-            <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)">
+            <input type="text" id="login-id" class="paper-input" placeholder="ID">
             <input type="password" id="login-pass" class="paper-input" placeholder="Password">
             
             <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
@@ -468,11 +409,8 @@
                 登録しているメールアドレスを入力してください。<br>
                 再設定用のリンクを送信します。
             </p>
-            
             <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
-            
             <div id="reset-msg" class="text-sm mb-4 hidden"></div>
-
             <div class="flex flex-col gap-3 mt-4">
                 <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
                 <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
@@ -488,9 +426,7 @@
                 今日あなたは何を知りたいですか？<br>
                 結果は運営元へ記録・送信されます。
             </p>
-            
             <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
-
             <div class="flex flex-col gap-3 mt-4">
                 <button id="btn-submit-topic" class="paper-btn w-full">占いを始める</button>
                 <button id="btn-cancel-topic" class="underline text-sm text-gray-600">スキップ (テーマなし)</button>
@@ -503,16 +439,13 @@
          * THE DAILY ORACLE - APP LOGIC
          */
 
-        // ==========================================
-        //  CONFIG
-        // ==========================================
         const IMG_FOLDER = 'images/';  
         const IMG_EXT = '.jpg';        
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png'; 
         
-        // ★ Google Apps Script Web App URL
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
+        // ★★★ 【最重要】ここに、ステップ1で発行した新しいWebアプリURLを貼り付けてください ★★★
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwiNSfMi-igpS-5KolfnkX_TSEH6mbU_7Ks3ori_RaHPfnZwpiW_nPh1fzUigbA3IJO/exec"; 
 
         const TOTAL_CARDS = 22; 
         const SHUFFLE_CARD_COUNT = 40;
@@ -525,11 +458,7 @@
             'three_card': { count: 3, pos: [{x:20, y:40}, {x:50, y:40}, {x:80, y:40}], loginReq: true },
             'four_card':  { count: 4, pos: [{x:25, y:25}, {x:75, y:25}, {x:25, y:60}, {x:75, y:60}], loginReq: true }
         };
-        
-        const VALID_ID = "admin";
-        const VALID_PASS = "secret";
 
-        // --- State ---
         let deck = [];
         let drawnCards = [];
         let currentSpread = 'one_oracle';
@@ -539,8 +468,10 @@
         let currentTopic = "";
         let lastValidSpread = 'one_oracle';
         let typeInterval;
+        let isDragging = false;
+        let currentDragCard = null;
+        let startX, startY, initialLeft, initialTop;
 
-        // --- DOM Elements ---
         const uiSpreadSelect = document.getElementById('spread-select');
         const uiBtnShuffle = document.getElementById('btn-shuffle');
         const uiBtnOpen = document.getElementById('btn-open');
@@ -564,12 +495,10 @@
             document.getElementById('deck-back-3')
         ];
 
-        // Modals
         const uiLoginModal = document.getElementById('login-modal');
         const uiResetModal = document.getElementById('reset-modal');
         const uiTopicModal = document.getElementById('topic-modal');
         
-        // ★ ID input restored
         const uiLoginId = document.getElementById('login-id');
         const uiLoginPass = document.getElementById('login-pass');
         const uiLoginError = document.getElementById('login-error');
@@ -581,21 +510,13 @@
         const uiLinkForgotPass = document.getElementById('link-forgot-pass');
         const uiBtnSubmitReset = document.getElementById('btn-submit-reset');
 
-        // --- Drag Variables ---
-        let isDragging = false;
-        let currentDragCard = null;
-        let startX, startY, initialLeft, initialTop;
-
-        // --- Init ---
         function init() {
-            // Set Date
             const d = new Date();
             uiDate.innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} 発行`;
 
             setupImages();
             populateDeck();
             
-            // Event Listeners
             uiSpreadSelect.addEventListener('change', handleSpreadChange);
             
             document.getElementById('btn-login-header').addEventListener('click', () => {
@@ -628,12 +549,9 @@
             uiBtnShuffle.addEventListener('click', startShuffle);
             uiDeckStack.addEventListener('click', handleDeckClick);
             uiBtnOpen.addEventListener('click', startReveal);
-            
             uiBtnReset.addEventListener('click', () => resetGame(true));
-            
             uiBtnShare.addEventListener('click', handleNativeShare);
             
-            // Drag Events
             document.addEventListener('mousedown', handleDragStart);
             document.addEventListener('touchstart', handleDragStart, {passive: false});
             document.addEventListener('mousemove', handleDragMove);
@@ -641,14 +559,11 @@
             document.addEventListener('mouseup', handleDragEnd);
             document.addEventListener('touchend', handleDragEnd);
             
-            // Resize Event
             window.addEventListener('resize', handleResize);
 
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
-        // --- Logic ---
-        
         function handleResize() {
             if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
                 setTimeout(repositionCards, 200);
@@ -662,10 +577,8 @@
             drawnCards.forEach((item, index) => {
                 const el = item.el;
                 const pos = conf.pos[index];
-                
                 const cardW = el.offsetWidth;
                 const cardH = el.offsetHeight;
-
                 const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
                 const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
                 
@@ -677,9 +590,7 @@
         
         function setupImages() {
             if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
-            uiDeckImgs.forEach(img => {
-                if(img) img.src = IMG_FOLDER + BACK_IMG;
-            });
+            uiDeckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
         }
 
         function populateDeck() {
@@ -701,7 +612,7 @@
             resetGame(false); 
         }
 
-        // ★ Correct Login: ID & Pass
+        // Login Logic
         function handleLoginSubmit() {
             const id = uiLoginId.value;
             const pass = uiLoginPass.value;
@@ -711,16 +622,11 @@
             uiBtnSubmitLogin.innerText = "認証中...";
             uiLoginError.classList.add('hidden');
 
-            const payload = {
-                type: 'auth',
-                id: id,
-                password: pass
-            };
+            const payload = { type: 'auth', id: id, password: pass };
 
+            // Use simple fetch. GAS should return JSON.
             fetch(API_ENDPOINT, {
                 method: 'POST',
-                redirect: 'follow', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             })
             .then(response => response.json())
@@ -732,11 +638,15 @@
                     showToast("ログインしました。", "success");
                     resetGame(false);
                 } else {
+                    // Show error details if available for debugging
+                    const msg = data.message ? `エラー: ${data.message}` : "IDまたはパスワードが違います";
+                    uiLoginError.innerText = msg;
                     uiLoginError.classList.remove('hidden');
                 }
             })
             .catch(err => {
                 console.error(err);
+                // Demo fallback
                 if(id === "admin" && pass === "secret") {
                      isLoggedIn = true;
                      hideModal(uiLoginModal);
@@ -744,7 +654,9 @@
                      showToast("ログインしました。(Demo)", "success");
                      resetGame(false);
                 } else {
-                     uiLoginError.innerText = "通信エラーが発生しました";
+                     // Show critical error alert
+                     alert("通信エラーが発生しました。\nURL設定やデプロイを確認してください。\n" + err);
+                     uiLoginError.innerText = "通信エラー";
                      uiLoginError.classList.remove('hidden');
                 }
             })
@@ -763,15 +675,10 @@
             uiResetMsg.classList.add('text-gray-600');
             uiResetMsg.innerText = "送信中...";
             
-            const payload = {
-                type: 'reset',
-                email: email
-            };
+            const payload = { type: 'reset', email: email };
             
             fetch(API_ENDPOINT, {
                 method: 'POST',
-                redirect: 'follow', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             })
             .then(response => response.json())
@@ -853,11 +760,9 @@
             uiDeckStack.classList.add('shuffling'); 
             uiBtnShuffle.disabled = true;
             uiSpreadSelect.disabled = true;
-            
             uiSpreadLayer.innerHTML = '';
             drawnCards = [];
             pickCount = 0;
-            
             setStatus("山札をタップしてカードを引いてください！");
         }
 
@@ -899,10 +804,8 @@
             uiSpreadLayer.appendChild(el);
             drawnCards.push({ id: cardId, reversed: isReversed, el: el });
 
-            // Animate
             const deckRect = uiDeckStack.getBoundingClientRect();
             const spreadRect = uiSpreadLayer.getBoundingClientRect();
-            
             const startX = (spreadRect.width / 2) - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w'))/2); 
             const startY = spreadRect.height - 150; 
 
@@ -920,7 +823,6 @@
                 el.style.transition = "all 0.5s ease-out";
                 el.style.left = `${targetX}px`;
                 el.style.top = `${targetY}px`;
-                
                 if(pos.cross) {
                     el.style.transform = "rotate(90deg)";
                 }
@@ -932,9 +834,7 @@
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
-                // ★ Hide Deck when done
                 uiDeckStack.classList.add('hidden'); 
-                
                 setStatus("カードが揃いました。「開く」を押してください。");
             } else {
                 setTimeout(() => {
@@ -975,13 +875,11 @@
         }
 
         function resetGame(fullReset = false) {
-            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
             if (fullReset) {
                 currentTopic = ""; 
                 updateTopicUI();
             }
 
-            // If logged in and topic missing, prompt
             if(isLoggedIn && !currentTopic && fullReset) {
                 if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);
@@ -991,21 +889,16 @@
             drawnCards = [];
             currentState = 'IDLE';
             populateDeck();
-            
             pickCount = 0; 
-
+            
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');
-            
             uiBtnOpen.disabled = true;
             uiBtnOpen.classList.remove('hidden');
             uiBtnOpen.style.opacity = 0.5;
-
             uiBtnReset.classList.add('hidden');
-            
             uiBtnShare.classList.add('hidden');
             uiBtnShare.classList.remove('flex');
-
             uiSpreadSelect.disabled = false;
             uiDeckStack.classList.remove('hidden');
             uiDeckStack.classList.remove('shuffling');
@@ -1015,65 +908,42 @@
             else setStatus("シャッフルを開始してください。");
         }
 
-        // --- Drag Implementation ---
         function handleDragStart(e) {
             if (currentState !== 'FINISHED') return;
-            // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
-
-            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
-
             const evt = e.type.includes('mouse') ? e : e.touches[0];
-
             isDragging = true;
             currentDragCard = targetEl;
-
             currentDragCard.style.zIndex = 100;
             currentDragCard.style.transition = 'none';
-
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;
-
             startX = evt.clientX;
             startY = evt.clientY;
-            
-            if (e.type === 'touchstart') {
-                e.preventDefault(); 
-            }
+            if (e.type === 'touchstart') { e.preventDefault(); }
         }
 
         function handleDragMove(e) {
             if (!isDragging || !currentDragCard) return;
-
             const evt = e.type.includes('mouse') ? e : e.touches[0];
             const dx = evt.clientX - startX;
             const dy = evt.clientY - startY;
-
             currentDragCard.style.left = `${initialLeft + dx}px`;
             currentDragCard.style.top = `${initialTop + dy}px`;
-            
             if(e.cancelable) e.preventDefault();
         }
 
         function handleDragEnd(e) {
             if (!isDragging) return;
-            if(currentDragCard) {
-                currentDragCard.style.zIndex = 50;
-            }
+            if(currentDragCard) currentDragCard.style.zIndex = 50;
             isDragging = false;
             currentDragCard = null;
         }
 
-        // --- Utils ---
-
-        function showModal(el) {
-            el.classList.add('active');
-        }
-        function hideModal(el) {
-            el.classList.remove('active');
-        }
+        function showModal(el) { el.classList.add('active'); }
+        function hideModal(el) { el.classList.remove('active'); }
         
         function showToast(msg, type='info') {
             const t = document.createElement('div');
@@ -1090,17 +960,10 @@
         async function handleNativeShare() {
             const url = "https://tarot.design4qol.com/";
             const text = `🔮 今日の運命 (The Daily Oracle)\nTheme: ${currentTopic || 'My Destiny'}`;
-            
             if (navigator.share) {
                 try {
-                    await navigator.share({
-                        title: 'The Daily Oracle',
-                        text: text,
-                        url: url
-                    });
-                } catch (err) {
-                    // Share cancelled
-                }
+                    await navigator.share({ title: 'The Daily Oracle', text: text, url: url });
+                } catch (err) {}
             } else {
                 if(navigator.clipboard) {
                     navigator.clipboard.writeText(`${text} ${url}`);
@@ -1113,9 +976,7 @@
 
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
-            
             showToast("結果を保存しています...", "info");
-
             const payload = {
                 type: 'save',
                 date: new Date().toISOString(),
@@ -1123,11 +984,8 @@
                 spread: currentSpread,
                 cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
             };
-
             fetch(API_ENDPOINT, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             }).then(() => {
                 showToast("運営へ送信完了。解説をお待ちください。", "success");
@@ -1145,14 +1003,11 @@
             if(uiGuideText) {
                 uiGuideText.textContent = '';
                 clearInterval(typeInterval);
-                
                 let i = 0;
                 typeInterval = setInterval(() => {
                     uiGuideText.textContent += msg.charAt(i);
                     i++;
-                    if (i >= msg.length) {
-                        clearInterval(typeInterval);
-                    }
+                    if (i >= msg.length) { clearInterval(typeInterval); }
                 }, 50); 
             }
         }

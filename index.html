@@ -408,7 +408,7 @@
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
             <p class="text-sm mb-6 text-gray-700">
-                こちらは Save Point サービス利用者向けです。
+                こちらは Save Point サービス利用者向けです。<br>
             </p>
             
             <input type="text" id="login-id" class="paper-input" placeholder="ID">
@@ -493,6 +493,9 @@
             'four_card':  { count: 4, pos: [{x:25, y:25}, {x:75, y:25}, {x:25, y:60}, {x:75, y:60}], loginReq: true }
         };
         
+        const VALID_ID = "admin";
+        const VALID_PASS = "secret";
+
         // --- State ---
         let deck = [];
         let drawnCards = [];
@@ -910,13 +913,11 @@
         }
 
         function resetGame(fullReset = false) {
-            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
             if (fullReset) {
                 currentTopic = ""; 
                 updateTopicUI();
             }
 
-            // If logged in and topic missing, prompt
             if(isLoggedIn && !currentTopic && fullReset) {
                 if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);

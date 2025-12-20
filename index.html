@@ -239,6 +239,28 @@
         </div>
     </div>
 
+    <div id="account-modal" class="modal-overlay">
+        <div class="paper-modal">
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">マイメニュー</h2>
+            <p id="account-name" class="text-sm mb-6 font-bold"></p>
+            
+            <div id="menu-main" class="flex flex-col gap-3">
+                <button id="btn-to-changepass" class="paper-btn secondary">パスワード変更</button>
+                <button id="btn-do-logout" class="paper-btn">ログアウト</button>
+                <button id="btn-close-account" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+            </div>
+
+            <form id="form-change-pass" class="hidden text-left">
+                <p class="text-xs mb-2 text-gray-600">現在のパスワードと新しいパスワードを入力してください。</p>
+                <input type="password" id="cp-old" class="paper-input" placeholder="現在のパスワード" required>
+                <input type="password" id="cp-new" class="paper-input" placeholder="新しいパスワード" required>
+                <div id="cp-msg" class="text-sm mb-2 hidden"></div>
+                <button type="submit" class="paper-btn w-full mb-2">変更する</button>
+                <button type="button" id="btn-back-account" class="underline text-sm text-gray-600 w-full text-center">戻る</button>
+            </form>
+        </div>
+    </div>
+
     <div id="topic-modal" class="modal-overlay">
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
@@ -252,14 +274,13 @@
     </div>
 
     <script>
-        // ▼ GAS URL (デプロイURL)
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwE0XennkE-1N_rUdtBhBkLnj4KVbqYuORao7ukUJt10XVk0pAw3DGIuOjmIcEoYF0/exec"; 
+        // ▼ 新しいURLを設定しました
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxL-hqL2SVHgDOwX85-7v4H9CxKmmTguH1fbppqD9nHKwQLgCrg2-rYItj9tirF7_rk/exec"; 
 
         const IMG_PATH = 'images/';
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png';
 
-        // スプレッド定義
         const SPREADS = {
             'one_oracle':   { count: 1, pos: [{x:50, y:45}], login: false },
             'two_oracle':   { count: 2, pos: [{x:35, y:45}, {x:65, y:45}], login: true },
@@ -269,11 +290,9 @@
             'four_card':    { count: 4, pos: [{x:30, y:30}, {x:70, y:30}, {x:30, y:65}, {x:70, y:65}], login: true }
         };
 
-        // State
         let state = { deck:[], drawn:[], phase:'IDLE', user:null, topic:'' };
         let currentSpread = 'one_oracle';
 
-        // Elements
         const ui = {
             spread: document.getElementById('spread-layer'),
             deck: document.getElementById('deck-area'),
@@ -284,13 +303,15 @@
             btnLoginHead: document.getElementById('btn-login-header'),
             modalLogin: document.getElementById('login-modal'),
             modalReset: document.getElementById('reset-modal'),
+            modalAccount: document.getElementById('account-modal'), 
             modalTopic: document.getElementById('topic-modal'),
             btnShuffle: document.getElementById('btn-shuffle'),
             btnOpen: document.getElementById('btn-open'),
             btnReset: document.getElementById('btn-reset'),
             btnShare: document.getElementById('btn-share'),
             formLogin: document.getElementById('form-login'),
-            formReset: document.getElementById('form-reset')
+            formReset: document.getElementById('form-reset'),
+            formChangePass: document.getElementById('form-change-pass')
         };
 
         function init() {
@@ -303,29 +324,33 @@
 
             // --- Event Listeners ---
 
-            // Login Logic (Fix: Use 'submit' event for better auto-fill support)
-            ui.btnLoginHead.addEventListener('click', () => state.user ? logout() : show(ui.modalLogin));
+            // Login Button -> Account Menu or Login Modal
+            ui.btnLoginHead.addEventListener('click', () => {
+                if(state.user) openAccountModal();
+                else show(ui.modalLogin);
+            });
             document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
+            ui.formLogin.addEventListener('submit', (e) => { e.preventDefault(); tryLogin(); });
             
-            ui.formLogin.addEventListener('submit', (e) => {
-                e.preventDefault(); // Stop reload
-                tryLogin();
-            });
-            
-            // Password Reset Logic
-            document.getElementById('link-forgot-pass').addEventListener('click', () => {
-                hide(ui.modalLogin); show(ui.modalReset);
-            });
-            document.getElementById('btn-close-reset').addEventListener('click', () => {
-                hide(ui.modalReset); show(ui.modalLogin);
-            });
-            
-            ui.formReset.addEventListener('submit', (e) => {
-                e.preventDefault();
-                tryReset();
-            });
+            // Password Reset
+            document.getElementById('link-forgot-pass').addEventListener('click', () => { hide(ui.modalLogin); show(ui.modalReset); });
+            document.getElementById('btn-close-reset').addEventListener('click', () => { hide(ui.modalReset); show(ui.modalLogin); });
+            ui.formReset.addEventListener('submit', (e) => { e.preventDefault(); tryReset(); });
 
-            // Spread Select
+            // Account Menu Listeners
+            document.getElementById('btn-close-account').addEventListener('click', () => hide(ui.modalAccount));
+            document.getElementById('btn-do-logout').addEventListener('click', logout);
+            document.getElementById('btn-to-changepass').addEventListener('click', () => {
+                document.getElementById('menu-main').classList.add('hidden');
+                ui.formChangePass.classList.remove('hidden');
+            });
+            document.getElementById('btn-back-account').addEventListener('click', () => {
+                ui.formChangePass.classList.add('hidden');
+                document.getElementById('menu-main').classList.remove('hidden');
+            });
+            ui.formChangePass.addEventListener('submit', (e) => { e.preventDefault(); tryChangePass(); });
+
+            // Game
             ui.select.addEventListener('change', (e) => {
                 if(SPREADS[e.target.value].login && !state.user) {
                     show(ui.modalLogin);
@@ -335,15 +360,12 @@
                     resetGame();
                 }
             });
-
-            // Game Buttons
             ui.btnShuffle.addEventListener('click', startShuffle);
             ui.deckStack.addEventListener('click', pickCard);
             ui.btnOpen.addEventListener('click', openCards);
             ui.btnReset.addEventListener('click', () => resetGame(true));
             ui.btnShare.addEventListener('click', shareResult);
 
-            // Topic Modal
             document.getElementById('btn-submit-topic').addEventListener('click', () => {
                 state.topic = document.getElementById('topic-input').value;
                 hide(ui.modalTopic); updateTopicUI(); guide("シャッフルしてください。");
@@ -366,11 +388,9 @@
             guide("スプレッド（並べ方）を選んで開始してください。");
         }
 
-        function populateDeck() {
-            state.deck = Array.from({length:22}, (_,i)=>i);
-        }
+        function populateDeck() { state.deck = Array.from({length:22}, (_,i)=>i); }
 
-        // --- Auth ---
+        // --- Auth & Account Functions ---
         function restoreSession() {
             const saved = localStorage.getItem('tarot_user');
             if(saved) {
@@ -383,13 +403,10 @@
         async function tryLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            
-            // NOTE: 'required' attribute on inputs handles empty check, but double check here
             if(!id || !pass) return;
 
             const btn = document.getElementById('btn-submit-login');
             const err = document.getElementById('login-error');
-            
             btn.disabled = true; btn.innerText = "認証中...";
             err.classList.add('hidden');
 
@@ -400,35 +417,23 @@
                     body: JSON.stringify({ type: 'auth', id: id, password: pass })
                 });
                 const data = await res.json();
-                
                 if(data.status === 'success') {
                     state.user = { name: data.username, email: id };
                     localStorage.setItem('tarot_user', JSON.stringify(state.user));
-                    hide(ui.modalLogin);
-                    updateAuthUI();
-                    showToast("ログインしました", "success");
-                    resetGame(); // Refresh state
+                    hide(ui.modalLogin); updateAuthUI();
+                    showToast("ログインしました", "success"); resetGame(); 
                 } else {
-                    err.innerText = data.message || "認証失敗";
-                    err.classList.remove('hidden');
+                    err.innerText = data.message || "認証失敗"; err.classList.remove('hidden');
                 }
-            } catch(e) {
-                err.innerText = "通信エラーが発生しました";
-                err.classList.remove('hidden');
-            } finally {
-                btn.disabled = false; btn.innerText = "認証する";
-            }
+            } catch(e) { err.innerText = "通信エラー"; err.classList.remove('hidden'); }
+            finally { btn.disabled = false; btn.innerText = "認証する"; }
         }
 
         async function tryReset() {
             const email = document.getElementById('reset-email').value;
             const msg = document.getElementById('reset-msg');
             if(!email) return;
-
-            msg.className = "text-sm mb-4 text-gray-600";
-            msg.innerText = "送信中...";
-            msg.classList.remove('hidden');
-
+            msg.className = "text-sm mb-4 text-gray-600"; msg.innerText = "送信中..."; msg.classList.remove('hidden');
             try {
                 const res = await fetch(API_ENDPOINT, {
                     method: 'POST', redirect: 'follow',
@@ -438,225 +443,155 @@
                 const data = await res.json();
                 msg.innerText = data.status === 'success' ? "再設定メールを送信しました" : "メールアドレスが見つかりません";
                 if(data.status !== 'success') msg.className = "text-sm mb-4 text-red-600";
+            } catch(e) { msg.innerText = "エラー"; msg.className = "text-sm mb-4 text-red-600"; }
+        }
+
+        async function tryChangePass() {
+            const oldP = document.getElementById('cp-old').value;
+            const newP = document.getElementById('cp-new').value;
+            const msg = document.getElementById('cp-msg');
+            
+            if(!oldP || !newP) return;
+            msg.className = "text-sm mb-2 text-gray-600"; msg.innerText = "更新中..."; msg.classList.remove('hidden');
+            
+            try {
+                const res = await fetch(API_ENDPOINT, {
+                    method: 'POST', redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ type: 'change_pass', id: state.user.email, oldPass: oldP, newPass: newP })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    alert("パスワードを変更しました。");
+                    hide(ui.modalAccount);
+                } else {
+                    msg.innerText = data.message || "変更に失敗しました";
+                    msg.className = "text-sm mb-2 text-red-600";
+                }
             } catch(e) {
-                msg.innerText = "エラーが発生しました";
-                msg.className = "text-sm mb-4 text-red-600";
+                msg.innerText = "通信エラー"; msg.className = "text-sm mb-2 text-red-600";
             }
         }
 
+        function openAccountModal() {
+            document.getElementById('account-name').innerText = "Account: " + state.user.name;
+            document.getElementById('menu-main').classList.remove('hidden');
+            ui.formChangePass.classList.add('hidden');
+            document.getElementById('cp-old').value = "";
+            document.getElementById('cp-new').value = "";
+            document.getElementById('cp-msg').classList.add('hidden');
+            show(ui.modalAccount);
+        }
+
         function logout() {
-            if(!confirm("ログアウトしますか？")) return;
             state.user = null;
             localStorage.removeItem('tarot_user');
+            hide(ui.modalAccount);
             updateAuthUI();
             currentSpread = 'one_oracle'; ui.select.value = 'one_oracle';
             resetGame(true);
+            showToast("ログアウトしました");
         }
 
         function updateAuthUI() {
-            ui.btnLoginHead.innerText = state.user ? "ログアウト" : "ログイン";
+            ui.btnLoginHead.innerText = state.user ? "アカウント" : "ログイン"; 
             Array.from(ui.select.options).forEach(opt => {
                 if(state.user) opt.text = opt.text.replace("🔒 ", "");
                 else if(SPREADS[opt.value].login && !opt.text.includes("🔒")) opt.text = "🔒 " + opt.text;
             });
         }
 
-        // --- Game Logic (Fixed Reset) ---
+        // --- Game Logic ---
         function resetGame(full = false) {
-            state.phase = 'IDLE'; 
-            state.drawn = [];
-            populateDeck(); // ★CRITICAL FIX: 山札を復活させる
-
-            ui.spread.innerHTML = '';
-            ui.deck.classList.remove('hidden');
-            ui.deckStack.classList.remove('shuffling');
-            
-            toggleBtns('init');
-            ui.select.disabled = false;
-            
-            if(full) {
-                state.topic = ''; updateTopicUI();
-                guide("スプレッド（並べ方）を選んでください。");
-            } else {
-                guide("準備ができたらシャッフルしてください。");
-            }
+            state.phase = 'IDLE'; state.drawn = []; populateDeck(); 
+            ui.spread.innerHTML = ''; ui.deck.classList.remove('hidden'); ui.deckStack.classList.remove('shuffling');
+            toggleBtns('init'); ui.select.disabled = false;
+            if(full) { state.topic = ''; updateTopicUI(); guide("スプレッド（並べ方）を選んでください。"); }
+            else { guide("準備ができたらシャッフルしてください。"); }
         }
 
         function startShuffle() {
             if(state.phase !== 'IDLE' && state.phase !== 'FINISHED') return;
-            if(state.user && !state.topic) {
-                document.getElementById('topic-input').value = "";
-                show(ui.modalTopic);
-                return;
-            }
-            
-            state.phase = 'SHUFFLING';
-            ui.deckStack.classList.add('shuffling');
-            populateDeck();
-            ui.spread.innerHTML = ''; state.drawn = [];
-            
-            toggleBtns('shuffling');
-            ui.select.disabled = true;
+            if(state.user && !state.topic) { document.getElementById('topic-input').value = ""; show(ui.modalTopic); return; }
+            state.phase = 'SHUFFLING'; ui.deckStack.classList.add('shuffling'); populateDeck();
+            ui.spread.innerHTML = ''; state.drawn = []; toggleBtns('shuffling'); ui.select.disabled = true;
             guide("山札をタップしてカードを引いてください。");
         }
 
         function pickCard() {
             if(state.phase !== 'SHUFFLING' && state.phase !== 'PICKING') return;
             const conf = SPREADS[currentSpread];
-            
-            // 山札チェック
             if(state.deck.length === 0) populateDeck();
-
             if(state.drawn.length >= conf.count) return;
-
-            state.phase = 'PICKING';
-            ui.deckStack.classList.remove('shuffling');
-
-            // Draw
+            state.phase = 'PICKING'; ui.deckStack.classList.remove('shuffling');
+            
             const rIdx = Math.floor(Math.random() * state.deck.length);
             const cid = state.deck.splice(rIdx, 1)[0];
             const isRev = Math.random() < 0.5;
-
-            // Create
+            
             const el = document.createElement('div');
             el.className = 'card-scene';
-            el.innerHTML = `
-                <div class="card-obj">
-                    <div class="card-face front"><img src="${IMG_PATH}${cid}.jpg" style="transform:${isRev?'rotate(180deg)':''}"></div>
-                    <div class="card-face back"><img src="${IMG_PATH}${BACK_IMG}"></div>
-                </div>`;
+            el.innerHTML = `<div class="card-obj"><div class="card-face front"><img src="${IMG_PATH}${cid}.jpg" style="transform:${isRev?'rotate(180deg)':''}"></div><div class="card-face back"><img src="${IMG_PATH}${BACK_IMG}"></div></div>`;
             ui.spread.appendChild(el);
-
-            // Anim Start
+            
             const sRect = ui.spread.getBoundingClientRect();
-            el.style.left = (sRect.width / 2) + 'px';
-            el.style.top = (sRect.height - 100) + 'px';
-            el.style.opacity = 1;
-
+            el.style.left = (sRect.width / 2) + 'px'; el.style.top = (sRect.height - 100) + 'px'; el.style.opacity = 1;
+            
             const pos = conf.pos[state.drawn.length];
             state.drawn.push({ id:cid, rev:isRev, el:el, pos:pos });
-
-            // Anim End
+            
             requestAnimationFrame(() => {
                 el.style.transition = "all 0.5s ease-out";
-                el.style.left = pos.x + '%'; 
-                el.style.top = pos.y + '%';
+                el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
                 if(pos.rot) el.style.transform = `rotate(${pos.rot}deg)`;
             });
 
             if(state.drawn.length >= conf.count) {
-                state.phase = 'READY';
-                ui.deck.classList.add('hidden');
-                toggleBtns('ready');
-                guide("揃いました。「開く」を押してください。");
-            } else {
-                setTimeout(() => { 
-                    if(state.phase === 'PICKING') ui.deckStack.classList.add('shuffling'); 
-                }, 400);
-            }
+                state.phase = 'READY'; ui.deck.classList.add('hidden'); toggleBtns('ready'); guide("揃いました。「開く」を押してください。");
+            } else { setTimeout(() => { if(state.phase === 'PICKING') ui.deckStack.classList.add('shuffling'); }, 400); }
         }
 
         function openCards() {
             if(state.phase !== 'READY') return;
-            state.phase = 'OPENING';
-            toggleBtns('opening');
-            guide("運命を紐解いています...");
-
+            state.phase = 'OPENING'; toggleBtns('opening'); guide("運命を紐解いています...");
             let delay = 0;
-            state.drawn.forEach(c => {
-                setTimeout(() => c.el.querySelector('.card-obj').classList.add('is-open'), delay);
-                delay += 800;
-            });
-
+            state.drawn.forEach(c => { setTimeout(() => c.el.querySelector('.card-obj').classList.add('is-open'), delay); delay += 800; });
             setTimeout(() => {
-                state.phase = 'FINISHED';
-                toggleBtns('finished');
-                guide("完了。カードは自由に動かせます。");
+                state.phase = 'FINISHED'; toggleBtns('finished'); guide("完了。カードは自由に動かせます。");
                 if(state.user) saveResult();
             }, delay + 600);
         }
 
         function saveResult() {
             if(!state.user) return;
-            const payload = {
-                type: 'save',
-                date: new Date().toISOString(),
-                username: state.user.name,
-                email: state.user.email,
-                theme: state.topic,
-                spread: currentSpread,
-                cards: state.drawn.map(c => ({ id: c.id, reversed: c.rev }))
-            };
             fetch(API_ENDPOINT, {
-                method: 'POST', redirect: 'follow',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
+                method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    type: 'save', date: new Date().toISOString(), username: state.user.name,
+                    email: state.user.email, theme: state.topic, spread: currentSpread, cards: state.drawn.map(c => ({ id: c.id, reversed: c.rev }))
+                })
             });
         }
 
         // --- Helpers ---
-        function repositionCards() {
-            state.drawn.forEach(item => {
-                item.el.style.transition = "none";
-                item.el.style.left = item.pos.x + '%';
-                item.el.style.top = item.pos.y + '%';
-            });
-        }
-        function updateTopicUI() {
-            const el = document.getElementById('topic-display');
-            const txt = document.getElementById('topic-text-content');
-            if(state.topic) { el.classList.remove('hidden'); txt.innerText = state.topic; }
-            else { el.classList.add('hidden'); }
-        }
+        function repositionCards() { state.drawn.forEach(item => { item.el.style.transition = "none"; item.el.style.left = item.pos.x + '%'; item.el.style.top = item.pos.y + '%'; }); }
+        function updateTopicUI() { const el = document.getElementById('topic-display'); const txt = document.getElementById('topic-text-content'); if(state.topic) { el.classList.remove('hidden'); txt.innerText = state.topic; } else { el.classList.add('hidden'); } }
         function toggleBtns(phase) {
-            ui.btnShuffle.classList.add('hidden'); ui.btnShuffle.disabled = true;
-            ui.btnOpen.classList.add('hidden'); 
-            ui.btnReset.classList.add('hidden'); 
-            ui.btnShare.classList.add('hidden');
-            
+            ui.btnShuffle.classList.add('hidden'); ui.btnShuffle.disabled = true; ui.btnOpen.classList.add('hidden'); ui.btnReset.classList.add('hidden'); ui.btnShare.classList.add('hidden');
             if(phase === 'init') { ui.btnShuffle.classList.remove('hidden'); ui.btnShuffle.disabled = false; }
             if(phase === 'shuffling') { ui.btnShuffle.classList.remove('hidden'); }
             if(phase === 'ready') { ui.btnOpen.classList.remove('hidden'); ui.btnOpen.disabled = false; }
             if(phase === 'finished') { ui.btnReset.classList.remove('hidden'); ui.btnShare.classList.remove('hidden'); ui.btnShare.classList.add('flex'); }
         }
-        function guide(msg) {
-            ui.guideTxt.innerText = msg; ui.guideTxt.classList.add('show');
-        }
+        function guide(msg) { ui.guideTxt.innerText = msg; ui.guideTxt.classList.add('show'); }
         function show(el) { el.classList.add('active'); }
         function hide(el) { el.classList.remove('active'); }
-        function showToast(m,t) {
-            const d=document.createElement('div'); d.className='toast'; d.innerText=m;
-            if(t==='success') d.style.borderLeft='4px solid #4caf50';
-            document.getElementById('toast-container').appendChild(d);
-            setTimeout(()=>d.remove(),3000);
-        }
-        async function shareResult() {
-            const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`;
-            try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); }
-            catch(e) { navigator.clipboard.writeText(txt); showToast("URLをコピーしました"); }
-        }
-
-        // Drag (Simple)
+        function showToast(m,t) { const d=document.createElement('div'); d.className='toast'; d.innerText=m; if(t==='success') d.style.borderLeft='4px solid #4caf50'; document.getElementById('toast-container').appendChild(d); setTimeout(()=>d.remove(),3000); }
+        async function shareResult() { const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`; try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); } catch(e) { navigator.clipboard.writeText(txt); showToast("URLをコピーしました"); } }
+        
         let drag = null, dx=0, dy=0;
-        function dragStart(e) {
-            if(state.phase !== 'FINISHED') return;
-            const t = e.target.closest('.card-scene');
-            if(!t) return;
-            const evt = e.touches ? e.touches[0] : e;
-            drag = t; drag.style.zIndex = 100; drag.style.transition = 'none';
-            const rect = drag.getBoundingClientRect();
-            dx = evt.clientX - rect.left; dy = evt.clientY - rect.top;
-            if(e.type==='touchstart') e.preventDefault();
-        }
-        function dragMove(e) {
-            if(!drag) return;
-            const evt = e.touches ? e.touches[0] : e;
-            const parent = ui.spread.getBoundingClientRect();
-            let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2);
-            let y = evt.clientY - parent.top - dy + (drag.offsetHeight/2);
-            drag.style.left = x + 'px'; drag.style.top = y + 'px';
-            if(e.cancelable) e.preventDefault();
-        }
+        function dragStart(e) { if(state.phase !== 'FINISHED') return; const t = e.target.closest('.card-scene'); if(!t) return; const evt = e.touches ? e.touches[0] : e; drag = t; drag.style.zIndex = 100; drag.style.transition = 'none'; const rect = drag.getBoundingClientRect(); dx = evt.clientX - rect.left; dy = evt.clientY - rect.top; if(e.type==='touchstart') e.preventDefault(); }
+        function dragMove(e) { if(!drag) return; const evt = e.touches ? e.touches[0] : e; const parent = ui.spread.getBoundingClientRect(); let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2); let y = evt.clientY - parent.top - dy + (drag.offsetHeight/2); drag.style.left = x + 'px'; drag.style.top = y + 'px'; if(e.cancelable) e.preventDefault(); }
         function dragEnd() { if(drag) { drag.style.zIndex = 10; drag = null; } }
 
         init();

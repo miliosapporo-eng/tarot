@@ -103,11 +103,13 @@
             backdrop-filter: grayscale(100%) blur(2px);
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
         .paper-modal {
             background: var(--paper-bg); border: 4px double var(--ink-black);
             padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
             box-shadow: 10px 10px 0 rgba(0,0,0,0.5); transform: scale(0.95);
             transition: transform 0.2s; max-height: 90vh; overflow-y: auto;
+            position: relative; /* ×ボタン配置用 */
         }
         .modal-overlay.active .paper-modal { transform: scale(1); }
         
@@ -119,12 +121,21 @@
         }
         .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
         .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
+        
         .paper-input {
             width: 100%; background: transparent; border: none;
             border-bottom: 2px solid var(--ink-black); padding: 10px;
             font-family: 'Shippori Mincho', serif; font-size: 1.1rem;
             color: var(--ink-black); outline: none; margin-bottom: 1rem; border-radius: 0;
         }
+
+        /* 閉じる(×)ボタン */
+        .btn-close-x {
+            position: absolute; top: 10px; right: 15px;
+            background: transparent; border: none; font-size: 1.5rem;
+            color: var(--ink-black); cursor: pointer; line-height: 1;
+        }
+        .btn-close-x:hover { opacity: 0.7; }
 
         #toast-container { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; pointer-events: none; }
         .toast {
@@ -204,7 +215,7 @@
             <p class="text-sm mb-6 text-gray-700">
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
-            <form id="form-login">
+            <form id="form-login" autocomplete="off">
                 <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)" autocomplete="username" required>
                 <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password" required>
                 <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
@@ -223,17 +234,19 @@
 
     <div id="reset-modal" class="modal-overlay">
         <div class="paper-modal">
+            <button type="button" id="btn-x-reset" class="btn-close-x">×</button>
+            
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
             <p class="text-sm mb-6 text-gray-700">
                 登録しているメールアドレスを入力してください。<br>
                 再設定用のリンクを送信します。
             </p>
-            <form id="form-reset">
+            <form id="form-reset" autocomplete="off">
                 <input type="email" id="reset-email" class="paper-input" placeholder="Email Address" required>
                 <div id="reset-msg" class="text-sm mb-4 hidden"></div>
                 <div class="flex flex-col gap-3 mt-4">
                     <button type="submit" class="paper-btn w-full">送信</button>
-                    <button type="button" id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
+                    <button type="button" id="btn-back-top" class="underline text-sm text-gray-600">TOPに戻る</button>
                 </div>
             </form>
         </div>
@@ -250,7 +263,7 @@
                 <button id="btn-close-account" class="underline text-sm text-gray-600 mt-2">閉じる</button>
             </div>
 
-            <form id="form-change-pass" class="hidden text-left">
+            <form id="form-change-pass" class="hidden text-left" autocomplete="off">
                 <p class="text-xs mb-2 text-gray-600">現在のパスワードと新しいパスワードを入力してください。</p>
                 <input type="password" id="cp-old" class="paper-input" placeholder="現在のパスワード" required>
                 <input type="password" id="cp-new" class="paper-input" placeholder="新しいパスワード" required>
@@ -265,7 +278,7 @@
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
             <p class="text-sm mb-6 text-gray-700 text-left">今日あなたは何を知りたいですか？</p>
-            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
+            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて..." autocomplete="off">
             <div class="flex flex-col gap-3 mt-4">
                 <button id="btn-submit-topic" class="paper-btn w-full">占いを始める</button>
                 <button id="btn-cancel-topic" class="underline text-sm text-gray-600">スキップ (テーマなし)</button>
@@ -274,7 +287,6 @@
     </div>
 
     <script>
-        // ▼ 新しいURLを設定しました
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxL-hqL2SVHgDOwX85-7v4H9CxKmmTguH1fbppqD9nHKwQLgCrg2-rYItj9tirF7_rk/exec"; 
 
         const IMG_PATH = 'images/';
@@ -315,6 +327,8 @@
         };
 
         function init() {
+            window.onbeforeunload = function() {}; 
+
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP') + " 発行";
             ui.guideImg.src = IMG_PATH + SEER_IMG;
             document.getElementById('deck-top-img').src = IMG_PATH + BACK_IMG;
@@ -332,10 +346,20 @@
             document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
             ui.formLogin.addEventListener('submit', (e) => { e.preventDefault(); tryLogin(); });
             
-            // Password Reset
-            document.getElementById('link-forgot-pass').addEventListener('click', () => { hide(ui.modalLogin); show(ui.modalReset); });
-            document.getElementById('btn-close-reset').addEventListener('click', () => { hide(ui.modalReset); show(ui.modalLogin); });
+            // Password Reset (修正済み)
+            document.getElementById('link-forgot-pass').addEventListener('click', () => { 
+                hide(ui.modalLogin); // ログインモーダルを閉じる
+                show(ui.modalReset); // リセットモーダルを開く
+            });
+            
+            // リセットモーダルの ×ボタン
+            document.getElementById('btn-x-reset').addEventListener('click', () => hide(ui.modalReset));
+            
+            // リセットモーダルの TOPに戻るボタン (モーダルを閉じる = TOPに戻る)
+            document.getElementById('btn-back-top').addEventListener('click', () => hide(ui.modalReset));
+
             ui.formReset.addEventListener('submit', (e) => { e.preventDefault(); tryReset(); });
+
 
             // Account Menu Listeners
             document.getElementById('btn-close-account').addEventListener('click', () => hide(ui.modalAccount));

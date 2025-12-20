@@ -40,7 +40,6 @@
             width: var(--card-w); height: var(--card-h);
             position: absolute; transform-style: preserve-3d; cursor: grab;
             opacity: 0; z-index: 10; touch-action: none;
-            /* 中央基準配置 */
             margin-left: calc(var(--card-w) * -0.5);
             margin-top: calc(var(--card-h) * -0.5);
         }
@@ -65,7 +64,7 @@
         .card-face img { width: 100%; height: 100%; object-fit: cover; }
         .card-obj.is-open { transform: rotateY(180deg); }
 
-        /* --- Table Layout --- */
+        /* --- Layout --- */
         #table-top {
             position: relative; flex-grow: 1; width: 100%;
             overflow: hidden; display: flex; flex-direction: column;
@@ -76,7 +75,6 @@
             max-width: 800px; left: 50%; transform: translateX(-50%);
             pointer-events: none; z-index: 20; 
         }
-        
         #deck-area {
             position: absolute; bottom: 10%; left: 50%;
             transform: translateX(-50%); width: var(--card-w); height: var(--card-h);
@@ -87,7 +85,6 @@
             border: 1px solid #333; background: #333;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-        /* シャッフルアニメーション復活 */
         .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
         .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
         @keyframes shuffleShake {
@@ -98,7 +95,7 @@
             100% { transform: translate(0,0) rotate(0); }
         }
 
-        /* --- Modal & UI --- */
+        /* --- Modals --- */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(44, 44, 44, 0.8);
             display: flex; justify-content: center; align-items: center;
@@ -106,7 +103,6 @@
             backdrop-filter: grayscale(100%) blur(2px);
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        
         .paper-modal {
             background: var(--paper-bg); border: 4px double var(--ink-black);
             padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
@@ -123,7 +119,6 @@
         }
         .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
         .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
-        
         .paper-input {
             width: 100%; background: transparent; border: none;
             border-bottom: 2px solid var(--ink-black); padding: 10px;
@@ -209,18 +204,18 @@
             <p class="text-sm mb-6 text-gray-700">
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
-            <form onsubmit="return false;">
-                <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)" autocomplete="username">
-                <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password">
+            <form id="form-login">
+                <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)" autocomplete="username" required>
+                <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password" required>
                 <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
                 
                 <div class="flex flex-col gap-3 mt-4">
-                    <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
+                    <button type="submit" id="btn-submit-login" class="paper-btn w-full">認証する</button>
                     <div class="flex justify-between items-center text-xs mt-2">
-                        <button id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
+                        <button type="button" id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
                         <a href="https://savepoint.design4qol.com" target="_blank" class="underline text-blue-800 hover:text-blue-600">新規登録する</a>
                     </div>
-                    <button id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+                    <button type="button" id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
                 </div>
             </form>
         </div>
@@ -233,12 +228,14 @@
                 登録しているメールアドレスを入力してください。<br>
                 再設定用のリンクを送信します。
             </p>
-            <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
-            <div id="reset-msg" class="text-sm mb-4 hidden"></div>
-            <div class="flex flex-col gap-3 mt-4">
-                <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
-                <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
-            </div>
+            <form id="form-reset">
+                <input type="email" id="reset-email" class="paper-input" placeholder="Email Address" required>
+                <div id="reset-msg" class="text-sm mb-4 hidden"></div>
+                <div class="flex flex-col gap-3 mt-4">
+                    <button type="submit" class="paper-btn w-full">送信</button>
+                    <button type="button" id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -255,14 +252,14 @@
     </div>
 
     <script>
-        // ▼ GAS URL (前回更新した最新のものを貼ってください)
+        // ▼ GAS URL (デプロイURL)
         const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec"; 
 
         const IMG_PATH = 'images/';
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png';
 
-        // スプレッド定義 (座標は %指定: x=横, y=縦)
+        // スプレッド定義
         const SPREADS = {
             'one_oracle':   { count: 1, pos: [{x:50, y:45}], login: false },
             'two_oracle':   { count: 2, pos: [{x:35, y:45}, {x:65, y:45}], login: true },
@@ -291,7 +288,9 @@
             btnShuffle: document.getElementById('btn-shuffle'),
             btnOpen: document.getElementById('btn-open'),
             btnReset: document.getElementById('btn-reset'),
-            btnShare: document.getElementById('btn-share')
+            btnShare: document.getElementById('btn-share'),
+            formLogin: document.getElementById('form-login'),
+            formReset: document.getElementById('form-reset')
         };
 
         function init() {
@@ -299,22 +298,32 @@
             ui.guideImg.src = IMG_PATH + SEER_IMG;
             document.getElementById('deck-top-img').src = IMG_PATH + BACK_IMG;
             
-            populateDeck(); // 初期デッキ生成
-            restoreSession(); // 自動ログイン
+            populateDeck(); 
+            restoreSession(); 
 
-            // Login Logic
+            // --- Event Listeners ---
+
+            // Login Logic (Fix: Use 'submit' event for better auto-fill support)
             ui.btnLoginHead.addEventListener('click', () => state.user ? logout() : show(ui.modalLogin));
             document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
-            document.getElementById('btn-submit-login').addEventListener('click', tryLogin);
+            
+            ui.formLogin.addEventListener('submit', (e) => {
+                e.preventDefault(); // Stop reload
+                tryLogin();
+            });
             
             // Password Reset Logic
-            document.getElementById('link-forgot-pass').addEventListener('click', (e) => {
-                e.preventDefault(); hide(ui.modalLogin); show(ui.modalReset);
+            document.getElementById('link-forgot-pass').addEventListener('click', () => {
+                hide(ui.modalLogin); show(ui.modalReset);
             });
             document.getElementById('btn-close-reset').addEventListener('click', () => {
                 hide(ui.modalReset); show(ui.modalLogin);
             });
-            document.getElementById('btn-submit-reset').addEventListener('click', tryReset);
+            
+            ui.formReset.addEventListener('submit', (e) => {
+                e.preventDefault();
+                tryReset();
+            });
 
             // Spread Select
             ui.select.addEventListener('change', (e) => {
@@ -374,7 +383,9 @@
         async function tryLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return; // 空なら何もしない
+            
+            // NOTE: 'required' attribute on inputs handles empty check, but double check here
+            if(!id || !pass) return;
 
             const btn = document.getElementById('btn-submit-login');
             const err = document.getElementById('login-error');
@@ -396,7 +407,7 @@
                     hide(ui.modalLogin);
                     updateAuthUI();
                     showToast("ログインしました", "success");
-                    resetGame();
+                    resetGame(); // Refresh state
                 } else {
                     err.innerText = data.message || "認証失敗";
                     err.classList.remove('hidden');
@@ -450,11 +461,11 @@
             });
         }
 
-        // --- Game ---
+        // --- Game Logic (Fixed Reset) ---
         function resetGame(full = false) {
             state.phase = 'IDLE'; 
             state.drawn = [];
-            populateDeck(); // ★リセット時に必ずデッキを補充する
+            populateDeck(); // ★CRITICAL FIX: 山札を復活させる
 
             ui.spread.innerHTML = '';
             ui.deck.classList.remove('hidden');
@@ -492,6 +503,10 @@
         function pickCard() {
             if(state.phase !== 'SHUFFLING' && state.phase !== 'PICKING') return;
             const conf = SPREADS[currentSpread];
+            
+            // 山札チェック
+            if(state.deck.length === 0) populateDeck();
+
             if(state.drawn.length >= conf.count) return;
 
             state.phase = 'PICKING';
@@ -502,7 +517,7 @@
             const cid = state.deck.splice(rIdx, 1)[0];
             const isRev = Math.random() < 0.5;
 
-            // Create Element
+            // Create
             const el = document.createElement('div');
             el.className = 'card-scene';
             el.innerHTML = `
@@ -512,16 +527,16 @@
                 </div>`;
             ui.spread.appendChild(el);
 
-            // Anim Start Position
+            // Anim Start
             const sRect = ui.spread.getBoundingClientRect();
             el.style.left = (sRect.width / 2) + 'px';
-            el.style.top = (sRect.height - 100) + 'px'; // Deck position approximation
+            el.style.top = (sRect.height - 100) + 'px';
             el.style.opacity = 1;
 
             const pos = conf.pos[state.drawn.length];
             state.drawn.push({ id:cid, rev:isRev, el:el, pos:pos });
 
-            // Anim End Position
+            // Anim End
             requestAnimationFrame(() => {
                 el.style.transition = "all 0.5s ease-out";
                 el.style.left = pos.x + '%'; 

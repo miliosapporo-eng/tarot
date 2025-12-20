@@ -12,19 +12,19 @@
         :root {
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
-            --ink-red: #8b0000;
-            --card-w: 160px; --card-h: 274px;
+            --card-w: 140px; --card-h: 240px; /* 少し小さくして収まりやすく調整 */
         }
-        @media (min-width: 375px) { :root { --card-w: 180px; --card-h: 308px; } }
+        @media (min-width: 375px) { :root { --card-w: 160px; --card-h: 274px; } }
+        /* 横持ちスマホ対応 */
         @media (orientation: landscape) and (max-height: 600px) {
-            :root { --card-w: 80px; --card-h: 137px; }
+            :root { --card-w: 70px; --card-h: 120px; }
             #title-img { display: none !important; }
-            header { padding: 0.25rem !important; height: auto !important; min-height: 2.5rem; }
-            #table-top { padding: 2rem 0 4rem; align-items: flex-start !important; }
+            header { padding: 0.25rem !important; min-height: 2rem; }
+            #table-top { padding-top: 1rem; }
             #deck-area { bottom: 0.5rem !important; transform: translateX(-50%) scale(0.8) !important; }
         }
 
-        /* --- Global Styles --- */
+        /* --- Global --- */
         body {
             background-color: var(--paper-bg);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
@@ -33,26 +33,28 @@
             overflow: hidden; height: 100vh; height: 100dvh;
             display: flex; flex-direction: column; touch-action: none;
         }
-        .headline { font-family: 'Playfair Display', serif; letter-spacing: -0.02em; }
+        .headline { font-family: 'Playfair Display', serif; }
 
-        /* --- Card & Scene --- */
+        /* --- Cards --- */
         .card-scene {
             width: var(--card-w); height: var(--card-h);
-            perspective: 1000px; position: absolute;
-            transform-style: preserve-3d; cursor: grab;
-            opacity: 0; z-index: 10; pointer-events: auto;
-            touch-action: none; transition: width 0.3s, height 0.3s;
+            position: absolute; transform-style: preserve-3d; cursor: grab;
+            opacity: 0; z-index: 10; touch-action: none;
+            /* 重要: 配置の基準点を中央にする */
+            margin-left: calc(var(--card-w) * -0.5);
+            margin-top: calc(var(--card-h) * -0.5);
         }
         .card-scene:active { cursor: grabbing; }
+        
         .card-obj {
             width: 100%; height: 100%; position: relative;
-            transform-style: preserve-3d; border-radius: 8px;
+            transform-style: preserve-3d; border-radius: 6px;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            box-shadow: 4px 4px 10px rgba(0,0,0,0.4); pointer-events: none;
+            box-shadow: 2px 4px 8px rgba(0,0,0,0.3); pointer-events: none;
         }
         .card-face {
             position: absolute; width: 100%; height: 100%;
-            backface-visibility: hidden; border-radius: 8px;
+            backface-visibility: hidden; border-radius: 6px;
             overflow: hidden; border: 1px solid #444; background: #fff;
         }
         .card-face.front { transform: rotateY(180deg); display: flex; justify-content: center; align-items: center; }
@@ -63,122 +65,119 @@
         .card-face img { width: 100%; height: 100%; object-fit: cover; }
         .card-obj.is-open { transform: rotateY(180deg); }
 
-        /* --- Layout Areas --- */
+        /* --- Table Layout --- */
         #table-top {
             position: relative; flex-grow: 1; width: 100%;
-            overflow: auto; display: flex; flex-direction: column;
+            overflow: hidden; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 1;
-            scrollbar-width: none; -ms-overflow-style: none;
         }
-        #table-top::-webkit-scrollbar { display: none; }
-        #spread-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+        /* カード展開エリア：画面からはみ出さないように制限 */
+        #spread-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            max-width: 800px; /* PCなどで広がりすぎないように制限 */
+            left: 50%; transform: translateX(-50%); /* 常に中央寄せ */
+            pointer-events: none; z-index: 20; 
+        }
+        
         #deck-area {
-            position: absolute; bottom: 2rem; left: 50%;
+            position: absolute; bottom: 10%; left: 50%;
             transform: translateX(-50%); width: var(--card-w); height: var(--card-h);
             z-index: 30; transition: all 0.3s;
         }
         .deck-card {
-            position: absolute; inset: 0; border-radius: 8px;
+            position: absolute; inset: 0; border-radius: 6px;
             border: 1px solid #333; background: #333;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: transform 0.1s;
-        }
-        
-        /* --- Animations --- */
-        @keyframes shuffleShake {
-            0%, 50%, 100% { transform: translateX(0) rotate(0); }
-            25% { transform: translateX(-15px) rotate(-2deg); }
-            75% { transform: translateX(15px) rotate(2deg); }
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
         .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
         .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
-        .bubble-pop { animation: popIn 0.3s ease-out forwards; }
-        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes shuffleShake {
+            0% { transform: translateX(0) rotate(0); }
+            100% { transform: translateX(5px) rotate(2deg); }
+        }
 
         /* --- UI Components --- */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(44, 44, 44, 0.8);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
             display: flex; justify-content: center; align-items: center;
-            z-index: 9999; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s; backdrop-filter: grayscale(100%) blur(2px);
+            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .paper-modal {
-            background: var(--paper-bg); border: 4px double var(--ink-black);
-            padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5); transform: scale(0.95);
-            transition: transform 0.2s; max-height: 90vh; overflow-y: auto;
+            background: var(--paper-bg); border: 3px double var(--ink-black);
+            padding: 1.5rem; width: 90%; max-width: 360px; text-align: center;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.4); transform: scale(0.9); transition: transform 0.2s;
         }
         .modal-overlay.active .paper-modal { transform: scale(1); }
         
         .paper-btn {
             background: var(--ink-black); color: var(--paper-bg); border: none;
-            padding: 10px 20px; font-family: 'Shippori Mincho', serif;
-            font-weight: bold; letter-spacing: 1px; cursor: pointer;
-            transition: all 0.2s; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            padding: 8px 16px; font-family: 'Shippori Mincho', serif;
+            font-weight: bold; cursor: pointer; transition: all 0.2s;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.3); font-size: 0.9rem;
         }
-        .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+        .paper-btn:active { transform: translate(2px, 2px); box-shadow: none; }
         .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
         .paper-input {
             width: 100%; background: transparent; border: none;
-            border-bottom: 2px solid var(--ink-black); padding: 10px;
-            font-family: 'Shippori Mincho', serif; font-size: 1.1rem;
-            color: var(--ink-black); outline: none; margin-bottom: 1rem; border-radius: 0;
+            border-bottom: 2px solid var(--ink-black); padding: 8px;
+            font-family: 'Shippori Mincho', serif; font-size: 1rem;
+            outline: none; margin-bottom: 1rem; border-radius: 0;
         }
 
-        #toast-container { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; pointer-events: none; }
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; width: auto; pointer-events: none; }
         .toast {
-            background: var(--ink-black); color: var(--paper-bg); padding: 12px 20px;
+            background: var(--ink-black); color: var(--paper-bg); padding: 10px 20px;
             margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            font-family: 'Shippori Mincho', serif; display: flex; align-items: center; justify-content: center;
-            animation: slideDown 0.3s ease-out; pointer-events: auto; border: 1px solid var(--paper-bg);
+            font-family: 'Shippori Mincho', serif; border: 1px solid var(--paper-bg);
+            animation: slideDown 0.3s ease-out;
         }
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .date-line { padding: 4px 0; margin-bottom: 10px; display: flex; justify-content: flex-end; align-items: center; font-family: 'Playfair Display', serif; font-size: 0.8rem; text-transform: uppercase; }
-        #guide-container { padding-bottom: 0 !important; bottom: 0 !important; }
+
+        /* --- Guide --- */
+        #guide-container { position: absolute; bottom: 0; right: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; padding: 10px; }
+        .guide-bubble {
+            background: #2c2c2c; color: #f4e4bc; padding: 12px; border-radius: 12px 12px 0 12px;
+            margin-bottom: 8px; border: 2px solid #f4e4bc; max-width: 240px; font-size: 0.85rem;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.3); opacity: 0; transform: scale(0.8); transition: all 0.3s;
+        }
+        .guide-bubble.show { opacity: 1; transform: scale(1); }
+        .guide-img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5)); }
     </style>
 </head>
 <body>
 
-    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm transition-all duration-300">
-        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1 date-line">
-             <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700">VOL. I</span>
-             <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
+    <header class="w-full px-4 py-2 bg-[#f4e4bc]/95 flex flex-col items-center shadow-sm z-50 relative">
+        <div class="w-full flex justify-between items-end border-b border-black/20 pb-1 mb-1">
+             <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700"></span>
+             <button id="btn-login-header" class="text-xs underline font-bold cursor-pointer text-gray-800">ログイン</button>
         </div>
-        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm transition-all duration-300">
-        <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
-            <span class="text-xs text-gray-600 mr-2">テーマ:</span>
-            <span id="topic-text-content" class="font-bold text-ink-red truncate text-sm"></span>
-        </div>
+        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-12 md:h-16 object-contain">
+        <div id="topic-display" class="hidden mt-1 text-center"><span class="text-xs mr-2">テーマ:</span><span id="topic-text-content" class="font-bold text-red-900 text-sm"></span></div>
     </header>
 
     <main id="table-top">
         <div id="toast-container"></div>
         <div id="spread-layer"></div>
+        
         <div id="deck-area">
             <div id="deck-stack" class="relative w-full h-full cursor-pointer">
-                <div class="deck-card" style="transform: translate(0, 0);"><img id="deck-back-1" src="" class="w-full h-full object-cover rounded"></div>
-                <div class="deck-card" style="transform: translate(2px, 2px);"><img id="deck-back-2" src="" class="w-full h-full object-cover rounded"></div>
-                <div class="deck-card" style="transform: translate(4px, 4px);"><img id="deck-back-3" src="" class="w-full h-full object-cover rounded"></div>
+                <div class="deck-card" style="transform: translate(0,0)"></div>
+                <div class="deck-card" style="transform: translate(3px,3px)"></div>
+                <div class="deck-card" style="transform: translate(6px,6px)"><img id="deck-top-img" src="" class="w-full h-full object-cover rounded-md"></div>
             </div>
         </div>
-        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
-            <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
-                <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
-                <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
-            </div>
-            <div class="w-28 h-28 md:w-40 md:h-40 relative mr-1 md:mr-2">
-                 <img id="guide-img" src="" class="w-full h-full object-contain opacity-100 drop-shadow-xl">
-            </div>
+
+        <div id="guide-container">
+            <div id="guide-bubble" class="guide-bubble">ここにメッセージ</div>
+            <img id="guide-img" src="" class="guide-img">
         </div>
     </main>
 
-    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50 h-20">
-        <div class="flex flex-wrap justify-between items-center gap-2 max-w-md mx-auto">
-            <div class="relative flex-grow">
-                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">
+    <footer class="w-full bg-[#f4e4bc] border-t-2 border-black p-2 z-50 h-auto min-h-[80px] flex items-center justify-center">
+        <div class="flex flex-wrap justify-center items-center gap-2 w-full max-w-lg">
+            <div class="relative w-40">
+                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-1 font-serif text-sm rounded-none appearance-none cursor-pointer">
                     <option value="one_oracle">ワンオラクル (1枚)</option>
                     <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
                     <option value="two_mind">🔒 ツーマインド (2枚)</option>
@@ -186,412 +185,402 @@
                     <option value="three_card">🔒 スリーカード (3枚)</option>
                     <option value="four_card">🔒 フォーカード (4枚)</option>
                 </select>
-                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none"><i class="fa-solid fa-caret-down"></i></div>
+                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-xs"><i class="fa-solid fa-caret-down"></i></div>
             </div>
             <button id="btn-shuffle" class="paper-btn">シャッフル</button>
-            <button id="btn-open" class="paper-btn secondary" disabled style="opacity: 0.5;">開く</button>
-            <button id="btn-reset" class="paper-btn secondary hidden">もう一度</button>
-            <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden items-center gap-2"><i class="fa-solid fa-share-nodes"></i></button>
+            <button id="btn-open" class="paper-btn secondary hidden" disabled>開く</button>
+            <button id="btn-reset" class="paper-btn secondary hidden">リセット</button>
+            <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden"><i class="fa-solid fa-share-nodes"></i></button>
         </div>
     </footer>
 
     <div id="login-modal" class="modal-overlay">
         <div class="paper-modal">
-            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
-            <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)">
-            <input type="password" id="login-pass" class="paper-input" placeholder="Password">
-            <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
-            <div class="flex flex-col gap-3 mt-4">
+            <h2 class="headline text-xl mb-4 border-b border-black pb-2">会員ログイン</h2>
+            <form id="form-login" onsubmit="return false;">
+                <input type="text" id="login-id" class="paper-input" placeholder="ID (Email)" autocomplete="username">
+                <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password">
+                <div id="login-error" class="text-red-700 text-xs mb-4 hidden"></div>
                 <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
-                <div class="flex justify-between items-center text-xs mt-2">
-                    <button id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
-                </div>
-                <button id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="reset-modal" class="modal-overlay">
-        <div class="paper-modal">
-            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
-            <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
-            <div id="reset-msg" class="text-sm mb-4 hidden"></div>
-            <div class="flex flex-col gap-3 mt-4">
-                <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
-                <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
-            </div>
+            </form>
+            <button id="btn-close-login" class="underline text-xs text-gray-600 mt-4">閉じる</button>
         </div>
     </div>
 
     <div id="topic-modal" class="modal-overlay">
         <div class="paper-modal">
-            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
-            <p class="text-sm mb-6 text-gray-700 text-left">今日あなたは何を知りたいですか？</p>
-            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
-            <div class="flex flex-col gap-3 mt-4">
-                <button id="btn-submit-topic" class="paper-btn w-full">占いを始める</button>
-                <button id="btn-cancel-topic" class="underline text-sm text-gray-600">スキップ (テーマなし)</button>
-            </div>
+            <h2 class="headline text-xl mb-4 border-b border-black pb-2">占いのテーマ</h2>
+            <input type="text" id="topic-input" class="paper-input" placeholder="何について占いますか？">
+            <button id="btn-submit-topic" class="paper-btn w-full mb-2">開始</button>
+            <button id="btn-cancel-topic" class="underline text-xs text-gray-600">スキップ</button>
         </div>
     </div>
 
     <script>
-        // --- 設定エリア ---
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyUzEB9fFwV80OO6N8HJeLP9R7jP78VuolwT3rkPQcHln1mSjJ3wnGdNcnIrRpwUsvN/exec"; 
-        
-        const IMG_FOLDER = 'images/';
-        const IMG_EXT = '.jpg';
+        // ▼ GASのURL（前回と同じでOK。変更があれば書き換えてください）
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec"; 
+
+        // ▼ 画像設定
+        const IMG_PATH = 'images/';
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png';
 
-        const SPREAD_CONFIGS = {
-            'one_oracle':   { count: 1, pos: [{x:50, y:40}], loginReq: false },
-            'two_oracle':   { count: 2, pos: [{x:35, y:40}, {x:65, y:40}], loginReq: true },
-            'two_mind':     { count: 2, pos: [{x:50, y:25}, {x:50, y:60}], loginReq: true },
-            'simple_cross': { count: 2, pos: [{x:50, y:40}, {x:50, y:40, cross: true}], loginReq: true },
-            'three_card':   { count: 3, pos: [{x:20, y:40}, {x:50, y:40}, {x:80, y:40}], loginReq: true },
-            'four_card':    { count: 4, pos: [{x:25, y:25}, {x:75, y:25}, {x:25, y:60}, {x:75, y:60}], loginReq: true }
+        // ▼ スプレッド設定（座標調整済み）
+        // x, y は「パーセント」。50,50がど真ん中。
+        const SPREADS = {
+            'one_oracle':   { count: 1, pos: [{x:50, y:45}], login: false },
+            'two_oracle':   { count: 2, pos: [{x:35, y:45}, {x:65, y:45}], login: true },
+            'two_mind':     { count: 2, pos: [{x:50, y:30}, {x:50, y:65}], login: true },
+            'simple_cross': { count: 2, pos: [{x:50, y:45}, {x:50, y:45, rot:90}], login: true },
+            'three_card':   { count: 3, pos: [{x:20, y:45}, {x:50, y:45}, {x:80, y:45}], login: true },
+            'four_card':    { count: 4, pos: [{x:30, y:30}, {x:70, y:30}, {x:30, y:65}, {x:70, y:65}], login: true }
         };
 
-        // --- ステート管理 ---
-        let deck = [];
-        let drawnCards = [];
+        // State
+        let state = { deck:[], drawn:[], phase:'IDLE', user:null, topic:'' };
         let currentSpread = 'one_oracle';
-        let currentState = 'IDLE'; 
-        let pickCount = 0;
-        let isLoggedIn = false;
-        let loginUser = { name: '', email: '' };
-        let currentTopic = "";
-        let lastValidSpread = 'one_oracle';
-        
-        // --- UI要素取得 ---
-        const els = {
-            select: document.getElementById('spread-select'),
-            btnShuffle: document.getElementById('btn-shuffle'),
-            btnOpen: document.getElementById('btn-open'),
-            btnReset: document.getElementById('btn-reset'),
-            btnShare: document.getElementById('btn-share'),
+
+        // Elements
+        const ui = {
+            spread: document.getElementById('spread-layer'),
+            deck: document.getElementById('deck-area'),
             deckStack: document.getElementById('deck-stack'),
-            spreadLayer: document.getElementById('spread-layer'),
-            topicDisplay: document.getElementById('topic-display'),
-            topicText: document.getElementById('topic-text-content'),
-            guideText: document.getElementById('guide-text'),
-            guideBubble: document.getElementById('guide-bubble'),
+            guideTxt: document.getElementById('guide-bubble'),
             guideImg: document.getElementById('guide-img'),
-            deckImgs: [document.getElementById('deck-back-1'), document.getElementById('deck-back-2'), document.getElementById('deck-back-3')],
-            loginModal: document.getElementById('login-modal'),
-            resetModal: document.getElementById('reset-modal'),
-            topicModal: document.getElementById('topic-modal'),
-            loginId: document.getElementById('login-id'),
-            loginPass: document.getElementById('login-pass'),
-            loginError: document.getElementById('login-error')
+            select: document.getElementById('spread-select'),
+            btnLoginHead: document.getElementById('btn-login-header'),
+            modalLogin: document.getElementById('login-modal'),
+            modalTopic: document.getElementById('topic-modal')
         };
 
-        // --- 初期化 ---
+        // --- Init ---
         function init() {
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP') + " 発行";
-            if(els.guideImg) els.guideImg.src = IMG_FOLDER + SEER_IMG;
-            els.deckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
-            populateDeck();
-
-            // イベントリスナー設定
-            els.select.addEventListener('change', handleSpreadChange);
-            document.getElementById('btn-login-header').addEventListener('click', () => isLoggedIn ? handleLogout() : showModal(els.loginModal));
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP');
+            ui.guideImg.src = IMG_PATH + SEER_IMG;
+            document.getElementById('deck-top-img').src = IMG_PATH + BACK_IMG;
             
-            // ログイン関連
-            document.getElementById('btn-submit-login').addEventListener('click', handleLoginSubmit);
-            document.getElementById('btn-close-login').addEventListener('click', () => hideModal(els.loginModal));
-            document.getElementById('link-forgot-pass').addEventListener('click', () => { hideModal(els.loginModal); showModal(els.resetModal); });
-            document.getElementById('btn-submit-reset').addEventListener('click', handleResetSubmit);
-            document.getElementById('btn-close-reset').addEventListener('click', () => hideModal(els.resetModal));
+            restoreSession(); // ★自動ログイン処理
+            
+            // Event Listeners
+            ui.btnLoginHead.addEventListener('click', () => state.user ? logout() : show(ui.modalLogin));
+            document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
+            document.getElementById('btn-submit-login').addEventListener('click', tryLogin);
+            
+            ui.select.addEventListener('change', (e) => {
+                if(SPREADS[e.target.value].login && !state.user) {
+                    show(ui.modalLogin);
+                    ui.select.value = currentSpread;
+                } else {
+                    currentSpread = e.target.value;
+                    resetGame();
+                }
+            });
 
-            // テーマ関連
+            document.getElementById('btn-shuffle').addEventListener('click', startShuffle);
+            ui.deckStack.addEventListener('click', pickCard);
+            document.getElementById('btn-open').addEventListener('click', openCards);
+            document.getElementById('btn-reset').addEventListener('click', () => resetGame(true));
+            document.getElementById('btn-share').addEventListener('click', shareResult);
+
             document.getElementById('btn-submit-topic').addEventListener('click', () => {
-                currentTopic = document.getElementById('topic-input').value.trim();
-                hideModal(els.topicModal); updateTopicUI(); setStatus(`テーマ: 「${currentTopic}」 シャッフルを開始してください。`);
+                state.topic = document.getElementById('topic-input').value;
+                hide(ui.modalTopic);
+                updateTopicUI();
+                guide("シャッフルしてください。");
             });
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
-                currentTopic = "テーマなし"; hideModal(els.topicModal); updateTopicUI(); setStatus("スプレッドを選んでシャッフルしてください。");
+                state.topic = "テーマなし";
+                hide(ui.modalTopic);
+                updateTopicUI();
+                guide("シャッフルしてください。");
             });
 
-            // ゲーム操作
-            els.btnShuffle.addEventListener('click', startShuffle);
-            els.deckStack.addEventListener('click', () => (currentState === 'SHUFFLING' || currentState === 'PICKING') && pickOneCard());
-            els.btnOpen.addEventListener('click', startReveal);
-            els.btnReset.addEventListener('click', () => resetGame(true));
-            els.btnShare.addEventListener('click', handleNativeShare);
+            // Drag Events
+            document.addEventListener('mousedown', dragStart);
+            document.addEventListener('touchstart', dragStart, {passive: false});
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, {passive: false});
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+            
+            window.addEventListener('resize', () => {
+                if(state.phase === 'FINISHED') repositionCards();
+            });
 
-            // ドラッグ操作
-            document.addEventListener('mousedown', handleDragStart);
-            document.addEventListener('touchstart', handleDragStart, {passive: false});
-            document.addEventListener('mousemove', handleDragMove);
-            document.addEventListener('touchmove', handleDragMove, {passive: false});
-            document.addEventListener('mouseup', handleDragEnd);
-            document.addEventListener('touchend', handleDragEnd);
-            window.addEventListener('resize', () => currentState !== 'OPENING' && repositionCards());
-
-            setStatus("スプレッド（並べ方）を選んで開始してください。");
+            guide("スプレッドを選んでください。");
         }
 
-        // --- API連携 (Core) ---
-        async function callGasApi(payload) {
-            try {
-                const res = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    redirect: 'follow', // GASのリダイレクトを追跡
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GASのCORS対策
-                    body: JSON.stringify(payload)
-                });
-                return await res.json();
-            } catch (err) {
-                console.error("API Error:", err);
-                throw err;
+        // --- Auth & Session (Auto Login) ---
+        function restoreSession() {
+            const saved = localStorage.getItem('tarot_user');
+            if(saved) {
+                state.user = JSON.parse(saved);
+                updateAuthUI();
+                showToast("おかえりなさい。", "success");
             }
         }
 
-        function handleLoginSubmit() {
-            const id = els.loginId.value;
-            const pass = els.loginPass.value;
+        async function tryLogin() {
+            const id = document.getElementById('login-id').value;
+            const pass = document.getElementById('login-pass').value;
             if(!id || !pass) return;
 
             const btn = document.getElementById('btn-submit-login');
             btn.disabled = true; btn.innerText = "認証中...";
-            els.loginError.classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
 
-            callGasApi({ type: 'auth', id: id, password: pass })
-                .then(data => {
-                    if(data.status === 'success') {
-                        isLoggedIn = true;
-                        loginUser = { name: data.username, email: id };
-                        hideModal(els.loginModal);
-                        updateLoginStateUI();
-                        showToast("ログインしました。", "success");
-                        resetGame(false);
-                    } else {
-                        els.loginError.innerText = data.message || "認証失敗";
-                        els.loginError.classList.remove('hidden');
-                    }
-                })
-                .catch(() => { els.loginError.innerText = "通信エラー"; els.loginError.classList.remove('hidden'); })
-                .finally(() => { btn.disabled = false; btn.innerText = "認証する"; });
-        }
-
-        function handleResetSubmit() {
-            const email = document.getElementById('reset-email').value;
-            const msgEl = document.getElementById('reset-msg');
-            if(!email) return;
-            
-            msgEl.className = 'text-sm mb-4 text-gray-600';
-            msgEl.innerText = "送信中...";
-            
-            callGasApi({ type: 'reset', email: email })
-                .then(data => {
-                    msgEl.innerText = data.status === 'success' ? "再設定メールを送信しました。" : "メールアドレスが見つかりませんでした。";
-                    if(data.status !== 'success') msgEl.classList.add('text-red-600');
-                })
-                .catch(() => { msgEl.innerText = "送信エラー"; msgEl.classList.add('text-red-600'); });
-        }
-
-        function sendDataToGAS() {
-            if(!API_ENDPOINT) return;
-            const payload = {
-                type: 'save',
-                date: new Date().toISOString(),
-                username: loginUser.name,
-                email: loginUser.email,
-                theme: currentTopic,
-                spread: currentSpread,
-                cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
-            };
-            callGasApi(payload).then(()=> showToast("運営へ記録されました。", "success")).catch(e => console.error(e));
-        }
-
-        // --- ロジック ---
-        function populateDeck() { deck = Array.from({length: 22}, (_, i) => i); }
-        
-        function handleSpreadChange(e) {
-            const val = e.target.value;
-            if (SPREAD_CONFIGS[val].loginReq && !isLoggedIn) {
-                showModal(els.loginModal);
-                els.select.value = lastValidSpread;
-                return;
-            }
-            currentSpread = val; lastValidSpread = val; resetGame(false);
-        }
-
-        function updateLoginStateUI() {
-            const btn = document.getElementById('btn-login-header');
-            const opts = els.select.options;
-            btn.innerText = isLoggedIn ? "ログアウト" : "ログイン";
-            for(let opt of opts) {
-                const conf = SPREAD_CONFIGS[opt.value];
-                if(isLoggedIn) opt.text = opt.text.replace("🔒 ", "");
-                else if(conf.loginReq && !opt.text.includes("🔒")) opt.text = "🔒 " + opt.text;
+            try {
+                const res = await fetch(API_ENDPOINT, {
+                    method: 'POST', redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ type: 'auth', id: id, password: pass })
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    state.user = { name: data.username, email: id };
+                    localStorage.setItem('tarot_user', JSON.stringify(state.user)); // ★保存
+                    hide(ui.modalLogin);
+                    updateAuthUI();
+                    showToast("ログインしました", "success");
+                    resetGame();
+                } else {
+                    throw new Error(data.message || "認証失敗");
+                }
+            } catch(e) {
+                document.getElementById('login-error').innerText = e.message;
+                document.getElementById('login-error').classList.remove('hidden');
+            } finally {
+                btn.disabled = false; btn.innerText = "認証する";
             }
         }
 
-        function handleLogout() {
+        function logout() {
             if(!confirm("ログアウトしますか？")) return;
-            isLoggedIn = false; loginUser = {name:'', email:''};
-            updateLoginStateUI();
-            currentSpread = 'one_oracle'; els.select.value = 'one_oracle';
-            currentTopic = ""; resetGame(true);
+            state.user = null;
+            localStorage.removeItem('tarot_user'); // ★削除
+            updateAuthUI();
+            currentSpread = 'one_oracle'; ui.select.value = 'one_oracle';
+            resetGame(true);
+        }
+
+        function updateAuthUI() {
+            ui.btnLoginHead.innerText = state.user ? "ログアウト" : "ログイン";
+            Array.from(ui.select.options).forEach(opt => {
+                if(state.user) opt.text = opt.text.replace("🔒 ", "");
+                else if(SPREADS[opt.value].login && !opt.text.includes("🔒")) opt.text = "🔒 " + opt.text;
+            });
+        }
+
+        // --- Game Logic ---
+        function resetGame(full = false) {
+            state.phase = 'IDLE'; state.deck = []; state.drawn = [];
+            ui.spread.innerHTML = '';
+            ui.deck.classList.remove('hidden');
+            ui.deckStack.classList.remove('shuffling');
+            
+            toggleBtns('init');
+            ui.select.disabled = false;
+            
+            if(full) {
+                state.topic = ''; updateTopicUI();
+                guide("スプレッドを選んでください。");
+            } else {
+                guide("準備ができたらシャッフルしてください。");
+            }
         }
 
         function startShuffle() {
-            if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
-            if(isLoggedIn && !currentTopic) { document.getElementById('topic-input').value = ""; showModal(els.topicModal); return; }
+            if(state.phase !== 'IDLE' && state.phase !== 'FINISHED') return;
+            // テーマ入力チェック
+            if(state.user && !state.topic) {
+                document.getElementById('topic-input').value = "";
+                show(ui.modalTopic);
+                return;
+            }
             
-            currentState = 'SHUFFLING';
-            els.deckStack.classList.add('shuffling'); 
-            els.btnShuffle.disabled = true; els.select.disabled = true;
-            els.spreadLayer.innerHTML = ''; drawnCards = []; pickCount = 0;
-            setStatus("山札をタップしてカードを引いてください！");
+            state.phase = 'SHUFFLING';
+            ui.deckStack.classList.add('shuffling');
+            state.deck = Array.from({length:22}, (_,i)=>i);
+            ui.spread.innerHTML = ''; state.drawn = [];
+            
+            toggleBtns('shuffling');
+            ui.select.disabled = true;
+            guide("山札をタップしてカードを引いてください。");
         }
 
-        function pickOneCard() {
-            const conf = SPREAD_CONFIGS[currentSpread];
-            if (pickCount >= conf.count) return;
-            
-            currentState = 'PICKING'; els.deckStack.classList.remove('shuffling');
-            if(deck.length === 0) populateDeck();
-            
-            const rIndex = Math.floor(Math.random() * deck.length);
-            const cardId = deck.splice(rIndex, 1)[0];
-            const isReversed = Math.random() < 0.5;
-            
+        function pickCard() {
+            if(state.phase !== 'SHUFFLING' && state.phase !== 'PICKING') return;
+            const conf = SPREADS[currentSpread];
+            if(state.drawn.length >= conf.count) return;
+
+            state.phase = 'PICKING';
+            ui.deckStack.classList.remove('shuffling');
+
             // カード生成
+            const rIdx = Math.floor(Math.random() * state.deck.length);
+            const cid = state.deck.splice(rIdx, 1)[0];
+            const isRev = Math.random() < 0.5;
+
             const el = document.createElement('div');
             el.className = 'card-scene';
             el.innerHTML = `
                 <div class="card-obj">
-                    <div class="card-face front"><img src="${IMG_FOLDER}${cardId}${IMG_EXT}" style="transform: ${isReversed ? 'rotate(180deg)' : 'none'};"></div>
-                    <div class="card-face back"><img src="${IMG_FOLDER}${BACK_IMG}"></div>
+                    <div class="card-face front"><img src="${IMG_PATH}${cid}.jpg" style="transform:${isRev?'rotate(180deg)':''}"></div>
+                    <div class="card-face back"><img src="${IMG_PATH}${BACK_IMG}"></div>
                 </div>`;
-            
-            els.spreadLayer.appendChild(el);
-            drawnCards.push({ id: cardId, reversed: isReversed, el: el });
-            
-            // アニメーション位置計算
-            const deckRect = els.deckStack.getBoundingClientRect();
-            const spreadRect = els.spreadLayer.getBoundingClientRect();
-            const startX = (spreadRect.width/2) - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w'))/2);
-            el.style.left = `${startX}px`; el.style.top = `${spreadRect.height - 150}px`; el.style.opacity = '1';
-            
+            ui.spread.appendChild(el);
+
+            // アニメーション開始位置（山札）
+            const dRect = ui.deck.getBoundingClientRect();
+            const sRect = ui.spread.getBoundingClientRect();
+            // spread-layer内での相対座標
+            const startX = (sRect.width / 2); // 中央
+            const startY = sRect.height - 100; // 下部
+
+            el.style.left = startX + 'px';
+            el.style.top = startY + 'px';
+            el.style.opacity = 1;
+
+            // 移動先
+            const pos = conf.pos[state.drawn.length];
+            state.drawn.push({ id:cid, rev:isRev, el:el, pos:pos });
+
             requestAnimationFrame(() => {
-                const pos = conf.pos[pickCount];
-                const tx = (spreadRect.width * (pos.x/100)) - (el.offsetWidth/2);
-                const ty = (spreadRect.height * (pos.y/100)) - (el.offsetHeight/2);
                 el.style.transition = "all 0.5s ease-out";
-                el.style.left = `${tx}px`; el.style.top = `${ty}px`;
-                if(pos.cross) el.style.transform = "rotate(90deg)";
+                // ★重要: カードの配置計算の修正
+                // コンテナの幅 * % = 中心のX座標
+                el.style.left = (pos.x) + '%'; 
+                el.style.top = (pos.y) + '%';
+                if(pos.rot) el.style.transform = `rotate(${pos.rot}deg)`;
             });
 
-            pickCount++;
-            if (pickCount >= conf.count) {
-                currentState = 'READY';
-                els.btnOpen.disabled = false; els.btnOpen.style.opacity = 1;
-                els.deckStack.classList.add('hidden');
-                setStatus("カードが揃いました。「開く」を押してください。");
+            if(state.drawn.length >= conf.count) {
+                state.phase = 'READY';
+                ui.deck.classList.add('hidden');
+                toggleBtns('ready');
+                guide("揃いました。「開く」を押してください。");
             } else {
-                setTimeout(() => { if(currentState === 'PICKING') els.deckStack.classList.add('shuffling'); }, 500);
+                setTimeout(() => { 
+                    if(state.phase === 'PICKING') ui.deckStack.classList.add('shuffling'); 
+                }, 400);
             }
         }
 
-        function startReveal() {
-            if (currentState !== 'READY') return;
-            currentState = 'OPENING'; els.btnOpen.disabled = true;
-            setStatus("運命を紐解いています...");
-            
+        function openCards() {
+            if(state.phase !== 'READY') return;
+            state.phase = 'OPENING';
+            toggleBtns('opening');
+            guide("運命を紐解いています...");
+
             let delay = 0;
-            drawnCards.forEach((c) => {
+            state.drawn.forEach(c => {
                 setTimeout(() => c.el.querySelector('.card-obj').classList.add('is-open'), delay);
                 delay += 800;
             });
 
             setTimeout(() => {
-                currentState = 'FINISHED';
-                els.btnShare.classList.remove('hidden'); els.btnShare.classList.add('flex');
-                els.btnReset.classList.remove('hidden');
-                els.btnShuffle.classList.add('hidden'); els.btnOpen.classList.add('hidden');
-                setStatus("リーディング完了。カードを動かして確認できます。");
-                if(isLoggedIn) sendDataToGAS();
-            }, delay + 500);
+                state.phase = 'FINISHED';
+                toggleBtns('finished');
+                guide("完了。カードは自由に動かせます。");
+                if(state.user) saveResult();
+            }, delay + 600);
         }
 
+        // --- Save Result ---
+        function saveResult() {
+            if(!state.user) return;
+            const payload = {
+                type: 'save',
+                date: new Date().toISOString(),
+                username: state.user.name,
+                email: state.user.email,
+                theme: state.topic,
+                spread: currentSpread,
+                cards: state.drawn.map(c => ({ id: c.id, reversed: c.rev }))
+            };
+            fetch(API_ENDPOINT, {
+                method: 'POST', redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }).then(()=>showToast("記録されました","success"));
+        }
+
+        // --- Utils & Helpers ---
         function repositionCards() {
-            const conf = SPREAD_CONFIGS[currentSpread];
-            const spreadRect = els.spreadLayer.getBoundingClientRect();
-            drawnCards.forEach((item, index) => {
-                const pos = conf.pos[index];
-                item.el.style.left = `${(spreadRect.width * (pos.x/100)) - (item.el.offsetWidth/2)}px`;
-                item.el.style.top = `${(spreadRect.height * (pos.y/100)) - (item.el.offsetHeight/2)}px`;
+            // リサイズ時に位置を再計算（%指定なので基本CSSがやるが、念のため）
+            state.drawn.forEach(item => {
+                item.el.style.transition = "none"; // リサイズ中はアニメーション切る
+                item.el.style.left = item.pos.x + '%';
+                item.el.style.top = item.pos.y + '%';
             });
         }
 
-        function resetGame(fullReset) {
-            if(fullReset) { currentTopic = ""; updateTopicUI(); }
-            if(isLoggedIn && !currentTopic && fullReset) { document.getElementById('topic-input').value=""; showModal(els.topicModal); }
-            
-            els.spreadLayer.innerHTML = ''; drawnCards = []; currentState = 'IDLE'; pickCount = 0; populateDeck();
-            
-            els.btnShuffle.classList.remove('hidden'); els.btnShuffle.disabled = false;
-            els.btnOpen.classList.remove('hidden'); els.btnOpen.disabled = true; els.btnOpen.style.opacity = 0.5;
-            els.btnReset.classList.add('hidden'); els.btnShare.classList.add('hidden'); els.btnShare.classList.remove('flex');
-            
-            els.select.disabled = false;
-            els.deckStack.classList.remove('hidden', 'shuffling');
-            
-            setStatus(!isLoggedIn ? "スプレッド（並べ方）を選んで開始してください。" : (!currentTopic ? "テーマを設定して占いを開始します。" : "シャッフルを開始してください。"));
-        }
-
-        // --- Utility ---
         function updateTopicUI() {
-            els.topicDisplay.className = currentTopic ? "text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md" : "hidden";
-            if(currentTopic) els.topicText.innerText = currentTopic;
+            const el = document.getElementById('topic-display');
+            const txt = document.getElementById('topic-text-content');
+            if(state.topic) { el.classList.remove('hidden'); txt.innerText = state.topic; }
+            else { el.classList.add('hidden'); }
         }
 
-        let dragItem = null, startX, startY, initL, initT;
-        function handleDragStart(e) {
-            if (currentState !== 'FINISHED') return;
-            const target = e.target.closest('.card-scene');
-            if (!target) return;
-            const evt = e.type.includes('mouse') ? e : e.touches[0];
-            dragItem = target;
-            dragItem.style.zIndex = 100; dragItem.style.transition = 'none';
-            initL = parseFloat(dragItem.style.left); initT = parseFloat(dragItem.style.top);
-            startX = evt.clientX; startY = evt.clientY;
-            if (e.type === 'touchstart') e.preventDefault();
+        function toggleBtns(phase) {
+            const b = { shuf: document.getElementById('btn-shuffle'), open: document.getElementById('btn-open'), reset: document.getElementById('btn-reset'), share: document.getElementById('btn-share') };
+            b.shuf.classList.add('hidden'); b.open.classList.add('hidden'); b.reset.classList.add('hidden'); b.share.classList.add('hidden');
+            
+            if(phase === 'init') b.shuf.classList.remove('hidden');
+            if(phase === 'shuffling') b.shuf.classList.remove('hidden'); b.shuf.disabled = true;
+            if(phase === 'ready') { b.open.classList.remove('hidden'); b.open.disabled = false; }
+            if(phase === 'finished') { b.reset.classList.remove('hidden'); b.share.classList.remove('hidden'); b.share.classList.add('flex'); }
         }
-        function handleDragMove(e) {
-            if (!dragItem) return;
-            const evt = e.type.includes('mouse') ? e : e.touches[0];
-            dragItem.style.left = `${initL + (evt.clientX - startX)}px`;
-            dragItem.style.top = `${initT + (evt.clientY - startY)}px`;
+
+        // --- Drag & Drop (Simple) ---
+        let drag = null, dx=0, dy=0;
+        function dragStart(e) {
+            if(state.phase !== 'FINISHED') return;
+            const t = e.target.closest('.card-scene');
+            if(!t) return;
+            const evt = e.touches ? e.touches[0] : e;
+            drag = t; 
+            drag.style.zIndex = 100;
+            drag.style.transition = 'none';
+            // 現在の画面上の位置を取得
+            const rect = drag.getBoundingClientRect();
+            // クリック位置と要素の左上の差分
+            dx = evt.clientX - rect.left;
+            dy = evt.clientY - rect.top;
+            if(e.type==='touchstart') e.preventDefault();
+        }
+        function dragMove(e) {
+            if(!drag) return;
+            const evt = e.touches ? e.touches[0] : e;
+            const parent = ui.spread.getBoundingClientRect();
+            // 親要素内での相対座標に変換
+            let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2); // center基準補正
+            let y = evt.clientY - parent.top - dy + (drag.offsetHeight/2);
+            drag.style.left = x + 'px';
+            drag.style.top = y + 'px';
             if(e.cancelable) e.preventDefault();
         }
-        function handleDragEnd() { if(dragItem) { dragItem.style.zIndex = 50; dragItem = null; } }
+        function dragEnd() {
+            if(drag) { drag.style.zIndex = 10; drag = null; }
+        }
 
-        function showModal(el) { el.classList.add('active'); }
-        function hideModal(el) { el.classList.remove('active'); }
-        function showToast(msg, type='info') {
-            const t = document.createElement('div');
-            t.className = 'toast'; t.innerHTML = msg;
-            if(type==='success') t.style.borderLeftColor = 'lightgreen';
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => { t.style.opacity=0; setTimeout(()=>t.remove(),300); }, 3000);
+        function guide(msg) {
+            ui.guideTxt.innerText = msg;
+            ui.guideTxt.classList.add('show');
         }
-        let typeInt;
-        function setStatus(msg) {
-            if(!els.guideBubble) return;
-            els.guideBubble.classList.remove('bubble-pop'); void els.guideBubble.offsetWidth; els.guideBubble.classList.add('bubble-pop');
-            els.guideText.textContent = ''; clearInterval(typeInt);
-            let i=0; typeInt = setInterval(() => { els.guideText.textContent += msg.charAt(i++); if(i>=msg.length) clearInterval(typeInt); }, 50);
+        function show(el) { el.classList.add('active'); }
+        function hide(el) { el.classList.remove('active'); }
+        function showToast(m,t) {
+            const div=document.createElement('div'); div.className='toast'; div.innerText=m;
+            if(t==='success') div.style.borderLeft='4px solid #4caf50';
+            document.getElementById('toast-container').appendChild(div);
+            setTimeout(()=>div.remove(), 3000);
         }
-        async function handleNativeShare() {
-            const txt = `🔮 The Daily Oracle\nTheme: ${currentTopic || 'My Destiny'}`;
-            try { await navigator.share({ title: 'The Daily Oracle', text: txt, url: "https://tarot.design4qol.com/" }); }
-            catch { navigator.clipboard.writeText(txt + " https://tarot.design4qol.com/"); showToast("URLをコピーしました"); }
+        async function shareResult() {
+            const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`;
+            try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); }
+            catch(e) { navigator.clipboard.writeText(txt); showToast("コピーしました"); }
         }
 
         init();

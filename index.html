@@ -12,10 +12,10 @@
         :root {
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
-            --card-w: 140px; --card-h: 240px; /* 少し小さくして収まりやすく調整 */
+            --ink-red: #8b0000;
+            --card-w: 140px; --card-h: 240px; 
         }
         @media (min-width: 375px) { :root { --card-w: 160px; --card-h: 274px; } }
-        /* 横持ちスマホ対応 */
         @media (orientation: landscape) and (max-height: 600px) {
             :root { --card-w: 70px; --card-h: 120px; }
             #title-img { display: none !important; }
@@ -40,7 +40,7 @@
             width: var(--card-w); height: var(--card-h);
             position: absolute; transform-style: preserve-3d; cursor: grab;
             opacity: 0; z-index: 10; touch-action: none;
-            /* 重要: 配置の基準点を中央にする */
+            /* 中央基準配置 */
             margin-left: calc(var(--card-w) * -0.5);
             margin-top: calc(var(--card-h) * -0.5);
         }
@@ -71,11 +71,9 @@
             overflow: hidden; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 1;
         }
-        /* カード展開エリア：画面からはみ出さないように制限 */
         #spread-layer { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            max-width: 800px; /* PCなどで広がりすぎないように制限 */
-            left: 50%; transform: translateX(-50%); /* 常に中央寄せ */
+            max-width: 800px; left: 50%; transform: translateX(-50%);
             pointer-events: none; z-index: 20; 
         }
         
@@ -89,56 +87,64 @@
             border: 1px solid #333; background: #333;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
+        /* シャッフルアニメーション復活 */
         .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
         .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
         @keyframes shuffleShake {
-            0% { transform: translateX(0) rotate(0); }
-            100% { transform: translateX(5px) rotate(2deg); }
+            0% { transform: translate(0,0) rotate(0); }
+            25% { transform: translate(-10px, 0) rotate(-2deg); }
+            50% { transform: translate(0,0) rotate(0); }
+            75% { transform: translate(10px, 0) rotate(2deg); }
+            100% { transform: translate(0,0) rotate(0); }
         }
 
-        /* --- UI Components --- */
+        /* --- Modal & UI --- */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            position: fixed; inset: 0; background: rgba(44, 44, 44, 0.8);
             display: flex; justify-content: center; align-items: center;
             z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            backdrop-filter: grayscale(100%) blur(2px);
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
         .paper-modal {
-            background: var(--paper-bg); border: 3px double var(--ink-black);
-            padding: 1.5rem; width: 90%; max-width: 360px; text-align: center;
-            box-shadow: 8px 8px 0 rgba(0,0,0,0.4); transform: scale(0.9); transition: transform 0.2s;
+            background: var(--paper-bg); border: 4px double var(--ink-black);
+            padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5); transform: scale(0.95);
+            transition: transform 0.2s; max-height: 90vh; overflow-y: auto;
         }
         .modal-overlay.active .paper-modal { transform: scale(1); }
         
         .paper-btn {
             background: var(--ink-black); color: var(--paper-bg); border: none;
-            padding: 8px 16px; font-family: 'Shippori Mincho', serif;
-            font-weight: bold; cursor: pointer; transition: all 0.2s;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.3); font-size: 0.9rem;
+            padding: 10px 20px; font-family: 'Shippori Mincho', serif;
+            font-weight: bold; letter-spacing: 1px; cursor: pointer;
+            transition: all 0.2s; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
         }
-        .paper-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+        .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
         .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
+        
         .paper-input {
             width: 100%; background: transparent; border: none;
-            border-bottom: 2px solid var(--ink-black); padding: 8px;
-            font-family: 'Shippori Mincho', serif; font-size: 1rem;
-            outline: none; margin-bottom: 1rem; border-radius: 0;
+            border-bottom: 2px solid var(--ink-black); padding: 10px;
+            font-family: 'Shippori Mincho', serif; font-size: 1.1rem;
+            color: var(--ink-black); outline: none; margin-bottom: 1rem; border-radius: 0;
         }
 
-        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; width: auto; pointer-events: none; }
+        #toast-container { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; pointer-events: none; }
         .toast {
-            background: var(--ink-black); color: var(--paper-bg); padding: 10px 20px;
+            background: var(--ink-black); color: var(--paper-bg); padding: 12px 20px;
             margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            font-family: 'Shippori Mincho', serif; border: 1px solid var(--paper-bg);
-            animation: slideDown 0.3s ease-out;
+            font-family: 'Shippori Mincho', serif; display: flex; align-items: center; justify-content: center;
+            animation: slideDown 0.3s ease-out; pointer-events: auto; border: 1px solid var(--paper-bg);
         }
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* --- Guide --- */
-        #guide-container { position: absolute; bottom: 0; right: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; padding: 10px; }
+        #guide-container { position: absolute; bottom: 0; right: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; padding: 10px; max-width: 60%; }
         .guide-bubble {
             background: #2c2c2c; color: #f4e4bc; padding: 12px; border-radius: 12px 12px 0 12px;
-            margin-bottom: 8px; border: 2px solid #f4e4bc; max-width: 240px; font-size: 0.85rem;
+            margin-bottom: 8px; border: 2px solid #f4e4bc; font-size: 0.85rem; font-weight: bold;
             box-shadow: 4px 4px 0 rgba(0,0,0,0.3); opacity: 0; transform: scale(0.8); transition: all 0.3s;
         }
         .guide-bubble.show { opacity: 1; transform: scale(1); }
@@ -148,12 +154,15 @@
 <body>
 
     <header class="w-full px-4 py-2 bg-[#f4e4bc]/95 flex flex-col items-center shadow-sm z-50 relative">
-        <div class="w-full flex justify-between items-end border-b border-black/20 pb-1 mb-1">
+        <div class="w-full flex justify-between items-end border-b border-black/20 pb-1 mb-1 w-full">
              <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700"></span>
-             <button id="btn-login-header" class="text-xs underline font-bold cursor-pointer text-gray-800">ログイン</button>
+             <button id="btn-login-header" class="text-xs underline font-bold cursor-pointer text-gray-800 hover:text-red-900">ログイン</button>
         </div>
         <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-12 md:h-16 object-contain">
-        <div id="topic-display" class="hidden mt-1 text-center"><span class="text-xs mr-2">テーマ:</span><span id="topic-text-content" class="font-bold text-red-900 text-sm"></span></div>
+        <div id="topic-display" class="hidden mt-1 text-center w-full border-t border-gray-400/50 pt-1">
+            <span class="text-xs mr-2 text-gray-600">テーマ:</span>
+            <span id="topic-text-content" class="font-bold text-red-900 text-sm"></span>
+        </div>
     </header>
 
     <main id="table-top">
@@ -177,7 +186,7 @@
     <footer class="w-full bg-[#f4e4bc] border-t-2 border-black p-2 z-50 h-auto min-h-[80px] flex items-center justify-center">
         <div class="flex flex-wrap justify-center items-center gap-2 w-full max-w-lg">
             <div class="relative w-40">
-                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-1 font-serif text-sm rounded-none appearance-none cursor-pointer">
+                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm rounded-none appearance-none cursor-pointer focus:outline-none">
                     <option value="one_oracle">ワンオラクル (1枚)</option>
                     <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
                     <option value="two_mind">🔒 ツーマインド (2枚)</option>
@@ -189,44 +198,71 @@
             </div>
             <button id="btn-shuffle" class="paper-btn">シャッフル</button>
             <button id="btn-open" class="paper-btn secondary hidden" disabled>開く</button>
-            <button id="btn-reset" class="paper-btn secondary hidden">リセット</button>
+            <button id="btn-reset" class="paper-btn secondary hidden">もう一度</button>
             <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden"><i class="fa-solid fa-share-nodes"></i></button>
         </div>
     </footer>
 
     <div id="login-modal" class="modal-overlay">
         <div class="paper-modal">
-            <h2 class="headline text-xl mb-4 border-b border-black pb-2">会員ログイン</h2>
-            <form id="form-login" onsubmit="return false;">
-                <input type="text" id="login-id" class="paper-input" placeholder="ID (Email)" autocomplete="username">
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
+            <p class="text-sm mb-6 text-gray-700">
+                こちらは Save Point サービス利用者向けです。<br>
+            </p>
+            <form onsubmit="return false;">
+                <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)" autocomplete="username">
                 <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password">
-                <div id="login-error" class="text-red-700 text-xs mb-4 hidden"></div>
-                <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
+                <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
+                
+                <div class="flex flex-col gap-3 mt-4">
+                    <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
+                    <div class="flex justify-between items-center text-xs mt-2">
+                        <button id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
+                        <a href="https://savepoint.design4qol.com" target="_blank" class="underline text-blue-800 hover:text-blue-600">新規登録する</a>
+                    </div>
+                    <button id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+                </div>
             </form>
-            <button id="btn-close-login" class="underline text-xs text-gray-600 mt-4">閉じる</button>
+        </div>
+    </div>
+
+    <div id="reset-modal" class="modal-overlay">
+        <div class="paper-modal">
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
+            <p class="text-sm mb-6 text-gray-700">
+                登録しているメールアドレスを入力してください。<br>
+                再設定用のリンクを送信します。
+            </p>
+            <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
+            <div id="reset-msg" class="text-sm mb-4 hidden"></div>
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
+                <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
+            </div>
         </div>
     </div>
 
     <div id="topic-modal" class="modal-overlay">
         <div class="paper-modal">
-            <h2 class="headline text-xl mb-4 border-b border-black pb-2">占いのテーマ</h2>
-            <input type="text" id="topic-input" class="paper-input" placeholder="何について占いますか？">
-            <button id="btn-submit-topic" class="paper-btn w-full mb-2">開始</button>
-            <button id="btn-cancel-topic" class="underline text-xs text-gray-600">スキップ</button>
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
+            <p class="text-sm mb-6 text-gray-700 text-left">今日あなたは何を知りたいですか？</p>
+            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btn-submit-topic" class="paper-btn w-full">占いを始める</button>
+                <button id="btn-cancel-topic" class="underline text-sm text-gray-600">スキップ (テーマなし)</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // ▼ GASのURL（前回と同じでOK。変更があれば書き換えてください）
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwE0XennkE-1N_rUdtBhBkLnj4KVbqYuORao7ukUJt10XVk0pAw3DGIuOjmIcEoYF0/exec"; 
+        // ▼ GAS URL (前回更新した最新のものを貼ってください)
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec"; 
 
-        // ▼ 画像設定
         const IMG_PATH = 'images/';
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png';
 
-        // ▼ スプレッド設定（座標調整済み）
-        // x, y は「パーセント」。50,50がど真ん中。
+        // スプレッド定義 (座標は %指定: x=横, y=縦)
         const SPREADS = {
             'one_oracle':   { count: 1, pos: [{x:50, y:45}], login: false },
             'two_oracle':   { count: 2, pos: [{x:35, y:45}, {x:65, y:45}], login: true },
@@ -250,22 +286,37 @@
             select: document.getElementById('spread-select'),
             btnLoginHead: document.getElementById('btn-login-header'),
             modalLogin: document.getElementById('login-modal'),
-            modalTopic: document.getElementById('topic-modal')
+            modalReset: document.getElementById('reset-modal'),
+            modalTopic: document.getElementById('topic-modal'),
+            btnShuffle: document.getElementById('btn-shuffle'),
+            btnOpen: document.getElementById('btn-open'),
+            btnReset: document.getElementById('btn-reset'),
+            btnShare: document.getElementById('btn-share')
         };
 
-        // --- Init ---
         function init() {
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP');
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP') + " 発行";
             ui.guideImg.src = IMG_PATH + SEER_IMG;
             document.getElementById('deck-top-img').src = IMG_PATH + BACK_IMG;
             
-            restoreSession(); // ★自動ログイン処理
-            
-            // Event Listeners
+            populateDeck(); // 初期デッキ生成
+            restoreSession(); // 自動ログイン
+
+            // Login Logic
             ui.btnLoginHead.addEventListener('click', () => state.user ? logout() : show(ui.modalLogin));
             document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
             document.getElementById('btn-submit-login').addEventListener('click', tryLogin);
             
+            // Password Reset Logic
+            document.getElementById('link-forgot-pass').addEventListener('click', (e) => {
+                e.preventDefault(); hide(ui.modalLogin); show(ui.modalReset);
+            });
+            document.getElementById('btn-close-reset').addEventListener('click', () => {
+                hide(ui.modalReset); show(ui.modalLogin);
+            });
+            document.getElementById('btn-submit-reset').addEventListener('click', tryReset);
+
+            // Spread Select
             ui.select.addEventListener('change', (e) => {
                 if(SPREADS[e.target.value].login && !state.user) {
                     show(ui.modalLogin);
@@ -276,26 +327,24 @@
                 }
             });
 
-            document.getElementById('btn-shuffle').addEventListener('click', startShuffle);
+            // Game Buttons
+            ui.btnShuffle.addEventListener('click', startShuffle);
             ui.deckStack.addEventListener('click', pickCard);
-            document.getElementById('btn-open').addEventListener('click', openCards);
-            document.getElementById('btn-reset').addEventListener('click', () => resetGame(true));
-            document.getElementById('btn-share').addEventListener('click', shareResult);
+            ui.btnOpen.addEventListener('click', openCards);
+            ui.btnReset.addEventListener('click', () => resetGame(true));
+            ui.btnShare.addEventListener('click', shareResult);
 
+            // Topic Modal
             document.getElementById('btn-submit-topic').addEventListener('click', () => {
                 state.topic = document.getElementById('topic-input').value;
-                hide(ui.modalTopic);
-                updateTopicUI();
-                guide("シャッフルしてください。");
+                hide(ui.modalTopic); updateTopicUI(); guide("シャッフルしてください。");
             });
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
                 state.topic = "テーマなし";
-                hide(ui.modalTopic);
-                updateTopicUI();
-                guide("シャッフルしてください。");
+                hide(ui.modalTopic); updateTopicUI(); guide("シャッフルしてください。");
             });
 
-            // Drag Events
+            // Drag
             document.addEventListener('mousedown', dragStart);
             document.addEventListener('touchstart', dragStart, {passive: false});
             document.addEventListener('mousemove', dragMove);
@@ -303,31 +352,35 @@
             document.addEventListener('mouseup', dragEnd);
             document.addEventListener('touchend', dragEnd);
             
-            window.addEventListener('resize', () => {
-                if(state.phase === 'FINISHED') repositionCards();
-            });
+            window.addEventListener('resize', () => { if(state.phase === 'FINISHED') repositionCards(); });
 
-            guide("スプレッドを選んでください。");
+            guide("スプレッド（並べ方）を選んで開始してください。");
         }
 
-        // --- Auth & Session (Auto Login) ---
+        function populateDeck() {
+            state.deck = Array.from({length:22}, (_,i)=>i);
+        }
+
+        // --- Auth ---
         function restoreSession() {
             const saved = localStorage.getItem('tarot_user');
             if(saved) {
                 state.user = JSON.parse(saved);
                 updateAuthUI();
-                showToast("おかえりなさい。", "success");
+                showToast("ログイン済み: " + state.user.name, "success");
             }
         }
 
         async function tryLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return;
+            if(!id || !pass) return; // 空なら何もしない
 
             const btn = document.getElementById('btn-submit-login');
+            const err = document.getElementById('login-error');
+            
             btn.disabled = true; btn.innerText = "認証中...";
-            document.getElementById('login-error').classList.add('hidden');
+            err.classList.add('hidden');
 
             try {
                 const res = await fetch(API_ENDPOINT, {
@@ -339,26 +392,51 @@
                 
                 if(data.status === 'success') {
                     state.user = { name: data.username, email: id };
-                    localStorage.setItem('tarot_user', JSON.stringify(state.user)); // ★保存
+                    localStorage.setItem('tarot_user', JSON.stringify(state.user));
                     hide(ui.modalLogin);
                     updateAuthUI();
                     showToast("ログインしました", "success");
                     resetGame();
                 } else {
-                    throw new Error(data.message || "認証失敗");
+                    err.innerText = data.message || "認証失敗";
+                    err.classList.remove('hidden');
                 }
             } catch(e) {
-                document.getElementById('login-error').innerText = e.message;
-                document.getElementById('login-error').classList.remove('hidden');
+                err.innerText = "通信エラーが発生しました";
+                err.classList.remove('hidden');
             } finally {
                 btn.disabled = false; btn.innerText = "認証する";
+            }
+        }
+
+        async function tryReset() {
+            const email = document.getElementById('reset-email').value;
+            const msg = document.getElementById('reset-msg');
+            if(!email) return;
+
+            msg.className = "text-sm mb-4 text-gray-600";
+            msg.innerText = "送信中...";
+            msg.classList.remove('hidden');
+
+            try {
+                const res = await fetch(API_ENDPOINT, {
+                    method: 'POST', redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ type: 'reset', email: email })
+                });
+                const data = await res.json();
+                msg.innerText = data.status === 'success' ? "再設定メールを送信しました" : "メールアドレスが見つかりません";
+                if(data.status !== 'success') msg.className = "text-sm mb-4 text-red-600";
+            } catch(e) {
+                msg.innerText = "エラーが発生しました";
+                msg.className = "text-sm mb-4 text-red-600";
             }
         }
 
         function logout() {
             if(!confirm("ログアウトしますか？")) return;
             state.user = null;
-            localStorage.removeItem('tarot_user'); // ★削除
+            localStorage.removeItem('tarot_user');
             updateAuthUI();
             currentSpread = 'one_oracle'; ui.select.value = 'one_oracle';
             resetGame(true);
@@ -372,9 +450,12 @@
             });
         }
 
-        // --- Game Logic ---
+        // --- Game ---
         function resetGame(full = false) {
-            state.phase = 'IDLE'; state.deck = []; state.drawn = [];
+            state.phase = 'IDLE'; 
+            state.drawn = [];
+            populateDeck(); // ★リセット時に必ずデッキを補充する
+
             ui.spread.innerHTML = '';
             ui.deck.classList.remove('hidden');
             ui.deckStack.classList.remove('shuffling');
@@ -384,7 +465,7 @@
             
             if(full) {
                 state.topic = ''; updateTopicUI();
-                guide("スプレッドを選んでください。");
+                guide("スプレッド（並べ方）を選んでください。");
             } else {
                 guide("準備ができたらシャッフルしてください。");
             }
@@ -392,7 +473,6 @@
 
         function startShuffle() {
             if(state.phase !== 'IDLE' && state.phase !== 'FINISHED') return;
-            // テーマ入力チェック
             if(state.user && !state.topic) {
                 document.getElementById('topic-input').value = "";
                 show(ui.modalTopic);
@@ -401,7 +481,7 @@
             
             state.phase = 'SHUFFLING';
             ui.deckStack.classList.add('shuffling');
-            state.deck = Array.from({length:22}, (_,i)=>i);
+            populateDeck();
             ui.spread.innerHTML = ''; state.drawn = [];
             
             toggleBtns('shuffling');
@@ -417,11 +497,12 @@
             state.phase = 'PICKING';
             ui.deckStack.classList.remove('shuffling');
 
-            // カード生成
+            // Draw
             const rIdx = Math.floor(Math.random() * state.deck.length);
             const cid = state.deck.splice(rIdx, 1)[0];
             const isRev = Math.random() < 0.5;
 
+            // Create Element
             const el = document.createElement('div');
             el.className = 'card-scene';
             el.innerHTML = `
@@ -431,27 +512,20 @@
                 </div>`;
             ui.spread.appendChild(el);
 
-            // アニメーション開始位置（山札）
-            const dRect = ui.deck.getBoundingClientRect();
+            // Anim Start Position
             const sRect = ui.spread.getBoundingClientRect();
-            // spread-layer内での相対座標
-            const startX = (sRect.width / 2); // 中央
-            const startY = sRect.height - 100; // 下部
-
-            el.style.left = startX + 'px';
-            el.style.top = startY + 'px';
+            el.style.left = (sRect.width / 2) + 'px';
+            el.style.top = (sRect.height - 100) + 'px'; // Deck position approximation
             el.style.opacity = 1;
 
-            // 移動先
             const pos = conf.pos[state.drawn.length];
             state.drawn.push({ id:cid, rev:isRev, el:el, pos:pos });
 
+            // Anim End Position
             requestAnimationFrame(() => {
                 el.style.transition = "all 0.5s ease-out";
-                // ★重要: カードの配置計算の修正
-                // コンテナの幅 * % = 中心のX座標
-                el.style.left = (pos.x) + '%'; 
-                el.style.top = (pos.y) + '%';
+                el.style.left = pos.x + '%'; 
+                el.style.top = pos.y + '%';
                 if(pos.rot) el.style.transform = `rotate(${pos.rot}deg)`;
             });
 
@@ -487,7 +561,6 @@
             }, delay + 600);
         }
 
-        // --- Save Result ---
         function saveResult() {
             if(!state.user) return;
             const payload = {
@@ -503,85 +576,73 @@
                 method: 'POST', redirect: 'follow',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
-            }).then(()=>showToast("記録されました","success"));
+            });
         }
 
-        // --- Utils & Helpers ---
+        // --- Helpers ---
         function repositionCards() {
-            // リサイズ時に位置を再計算（%指定なので基本CSSがやるが、念のため）
             state.drawn.forEach(item => {
-                item.el.style.transition = "none"; // リサイズ中はアニメーション切る
+                item.el.style.transition = "none";
                 item.el.style.left = item.pos.x + '%';
                 item.el.style.top = item.pos.y + '%';
             });
         }
-
         function updateTopicUI() {
             const el = document.getElementById('topic-display');
             const txt = document.getElementById('topic-text-content');
             if(state.topic) { el.classList.remove('hidden'); txt.innerText = state.topic; }
             else { el.classList.add('hidden'); }
         }
-
         function toggleBtns(phase) {
-            const b = { shuf: document.getElementById('btn-shuffle'), open: document.getElementById('btn-open'), reset: document.getElementById('btn-reset'), share: document.getElementById('btn-share') };
-            b.shuf.classList.add('hidden'); b.open.classList.add('hidden'); b.reset.classList.add('hidden'); b.share.classList.add('hidden');
+            ui.btnShuffle.classList.add('hidden'); ui.btnShuffle.disabled = true;
+            ui.btnOpen.classList.add('hidden'); 
+            ui.btnReset.classList.add('hidden'); 
+            ui.btnShare.classList.add('hidden');
             
-            if(phase === 'init') b.shuf.classList.remove('hidden');
-            if(phase === 'shuffling') b.shuf.classList.remove('hidden'); b.shuf.disabled = true;
-            if(phase === 'ready') { b.open.classList.remove('hidden'); b.open.disabled = false; }
-            if(phase === 'finished') { b.reset.classList.remove('hidden'); b.share.classList.remove('hidden'); b.share.classList.add('flex'); }
+            if(phase === 'init') { ui.btnShuffle.classList.remove('hidden'); ui.btnShuffle.disabled = false; }
+            if(phase === 'shuffling') { ui.btnShuffle.classList.remove('hidden'); }
+            if(phase === 'ready') { ui.btnOpen.classList.remove('hidden'); ui.btnOpen.disabled = false; }
+            if(phase === 'finished') { ui.btnReset.classList.remove('hidden'); ui.btnShare.classList.remove('hidden'); ui.btnShare.classList.add('flex'); }
+        }
+        function guide(msg) {
+            ui.guideTxt.innerText = msg; ui.guideTxt.classList.add('show');
+        }
+        function show(el) { el.classList.add('active'); }
+        function hide(el) { el.classList.remove('active'); }
+        function showToast(m,t) {
+            const d=document.createElement('div'); d.className='toast'; d.innerText=m;
+            if(t==='success') d.style.borderLeft='4px solid #4caf50';
+            document.getElementById('toast-container').appendChild(d);
+            setTimeout(()=>d.remove(),3000);
+        }
+        async function shareResult() {
+            const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`;
+            try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); }
+            catch(e) { navigator.clipboard.writeText(txt); showToast("URLをコピーしました"); }
         }
 
-        // --- Drag & Drop (Simple) ---
+        // Drag (Simple)
         let drag = null, dx=0, dy=0;
         function dragStart(e) {
             if(state.phase !== 'FINISHED') return;
             const t = e.target.closest('.card-scene');
             if(!t) return;
             const evt = e.touches ? e.touches[0] : e;
-            drag = t; 
-            drag.style.zIndex = 100;
-            drag.style.transition = 'none';
-            // 現在の画面上の位置を取得
+            drag = t; drag.style.zIndex = 100; drag.style.transition = 'none';
             const rect = drag.getBoundingClientRect();
-            // クリック位置と要素の左上の差分
-            dx = evt.clientX - rect.left;
-            dy = evt.clientY - rect.top;
+            dx = evt.clientX - rect.left; dy = evt.clientY - rect.top;
             if(e.type==='touchstart') e.preventDefault();
         }
         function dragMove(e) {
             if(!drag) return;
             const evt = e.touches ? e.touches[0] : e;
             const parent = ui.spread.getBoundingClientRect();
-            // 親要素内での相対座標に変換
-            let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2); // center基準補正
+            let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2);
             let y = evt.clientY - parent.top - dy + (drag.offsetHeight/2);
-            drag.style.left = x + 'px';
-            drag.style.top = y + 'px';
+            drag.style.left = x + 'px'; drag.style.top = y + 'px';
             if(e.cancelable) e.preventDefault();
         }
-        function dragEnd() {
-            if(drag) { drag.style.zIndex = 10; drag = null; }
-        }
-
-        function guide(msg) {
-            ui.guideTxt.innerText = msg;
-            ui.guideTxt.classList.add('show');
-        }
-        function show(el) { el.classList.add('active'); }
-        function hide(el) { el.classList.remove('active'); }
-        function showToast(m,t) {
-            const div=document.createElement('div'); div.className='toast'; div.innerText=m;
-            if(t==='success') div.style.borderLeft='4px solid #4caf50';
-            document.getElementById('toast-container').appendChild(div);
-            setTimeout(()=>div.remove(), 3000);
-        }
-        async function shareResult() {
-            const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`;
-            try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); }
-            catch(e) { navigator.clipboard.writeText(txt); showToast("コピーしました"); }
-        }
+        function dragEnd() { if(drag) { drag.style.zIndex = 10; drag = null; } }
 
         init();
     </script>

@@ -27,6 +27,30 @@
             }
         }
 
+        /* Landscape Optimization */
+        @media (orientation: landscape) and (max-height: 600px) {
+            :root {
+                --card-w: 80px; 
+                --card-h: 137px;
+            }
+            #title-img { display: none !important; }
+            header {
+                padding-top: 0.25rem !important;
+                padding-bottom: 0.25rem !important;
+                height: auto !important;
+                min-height: 2.5rem;
+            }
+            #table-top {
+                align-items: flex-start !important;
+                padding-top: 2rem;
+                padding-bottom: 4rem;
+            }
+            #deck-area {
+                bottom: 0.5rem !important;
+                transform: translateX(-50%) scale(0.8) !important;
+            }
+        }
+
         body {
             background-color: var(--paper-bg);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
@@ -114,12 +138,17 @@
             position: relative;
             flex-grow: 1;
             width: 100%;
-            overflow: hidden;
+            overflow: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        #table-top::-webkit-scrollbar { 
+            display: none; 
         }
 
         #spread-layer {
@@ -141,6 +170,7 @@
             width: var(--card-w);
             height: var(--card-h);
             z-index: 30;
+            transition: all 0.3s;
         }
 
         .deck-card {
@@ -203,6 +233,8 @@
             transform: scale(0.95);
             transition: transform 0.2s;
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-overlay.active .paper-modal {
             transform: scale(1);
@@ -313,14 +345,14 @@
 <body>
 
     <!-- Top Bar -->
-    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm">
-        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1">
+    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm transition-all duration-300">
+        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1 date-line">
              <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700">VOL. I</span>
              <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
         
         <!-- Title Image -->
-        <img src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm">
+        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm transition-all duration-300">
 
         <!-- Topic Display -->
         <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
@@ -411,7 +443,8 @@
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
             
-            <input type="text" id="login-id" class="paper-input" placeholder="ID">
+            <!-- ★ ID Input Restored -->
+            <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)">
             <input type="password" id="login-pass" class="paper-input" placeholder="Password">
             
             <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
@@ -479,7 +512,7 @@
         const SEER_IMG = 'seer.png'; 
         
         // ★ Google Apps Script Web App URL
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyiALNk6Wree4EuKMVcfUct-nkpXP2SGw8aTSww_qa3F_O6-FrMIe0s_gW_sZAxfaph/exec";
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
 
         const TOTAL_CARDS = 22; 
         const SHUFFLE_CARD_COUNT = 40;
@@ -536,6 +569,7 @@
         const uiResetModal = document.getElementById('reset-modal');
         const uiTopicModal = document.getElementById('topic-modal');
         
+        // ★ ID input restored
         const uiLoginId = document.getElementById('login-id');
         const uiLoginPass = document.getElementById('login-pass');
         const uiLoginError = document.getElementById('login-error');
@@ -606,11 +640,40 @@
             document.addEventListener('touchmove', handleDragMove, {passive: false});
             document.addEventListener('mouseup', handleDragEnd);
             document.addEventListener('touchend', handleDragEnd);
+            
+            // Resize Event
+            window.addEventListener('resize', handleResize);
 
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
         // --- Logic ---
+        
+        function handleResize() {
+            if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
+                setTimeout(repositionCards, 200);
+            }
+        }
+
+        function repositionCards() {
+            const conf = SPREAD_CONFIGS[currentSpread];
+            const spreadRect = uiSpreadLayer.getBoundingClientRect();
+            
+            drawnCards.forEach((item, index) => {
+                const el = item.el;
+                const pos = conf.pos[index];
+                
+                const cardW = el.offsetWidth;
+                const cardH = el.offsetHeight;
+
+                const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
+                const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
+                
+                el.style.transition = 'left 0.3s, top 0.3s';
+                el.style.left = `${targetX}px`;
+                el.style.top = `${targetY}px`;
+            });
+        }
         
         function setupImages() {
             if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
@@ -638,7 +701,7 @@
             resetGame(false); 
         }
 
-        // ★ Modified Login: ID & Pass
+        // ★ Correct Login: ID & Pass
         function handleLoginSubmit() {
             const id = uiLoginId.value;
             const pass = uiLoginPass.value;
@@ -691,7 +754,6 @@
             });
         }
         
-        // ★ Password Reset Logic
         function handleResetSubmit() {
             const email = uiResetEmail.value;
             if(!email) return;
@@ -913,11 +975,13 @@
         }
 
         function resetGame(fullReset = false) {
+            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
             if (fullReset) {
                 currentTopic = ""; 
                 updateTopicUI();
             }
 
+            // If logged in and topic missing, prompt
             if(isLoggedIn && !currentTopic && fullReset) {
                 if(uiTopicInput) uiTopicInput.value = "";
                 showModal(uiTopicModal);

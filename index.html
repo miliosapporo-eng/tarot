@@ -7,199 +7,437 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- Fonts & Variables --- */
+        /* Retro Newspaper Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;700&display=swap');
+
         :root {
             --paper-bg: #f4e4bc;
             --ink-black: #2c2c2c;
             --ink-red: #8b0000;
-            --card-w: 140px; --card-h: 240px; 
-        }
-        @media (min-width: 375px) { :root { --card-w: 160px; --card-h: 274px; } }
-        @media (orientation: landscape) and (max-height: 600px) {
-            :root { --card-w: 70px; --card-h: 120px; }
-            #title-img { display: none !important; }
-            header { padding: 0.25rem !important; min-height: 2rem; }
-            #table-top { padding-top: 1rem; }
-            #deck-area { bottom: 0.5rem !important; transform: translateX(-50%) scale(0.8) !important; }
+            /* カードサイズ */
+            --card-w: 160px;
+            --card-h: 274px;
         }
 
-        /* --- Global --- */
+        /* Mobile Optimization */
+        @media (min-width: 375px) {
+            :root {
+                --card-w: 180px;
+                --card-h: 308px;
+            }
+        }
+
+        /* Landscape Optimization */
+        @media (orientation: landscape) and (max-height: 600px) {
+            :root {
+                --card-w: 80px; 
+                --card-h: 137px;
+            }
+            #title-img { display: none !important; }
+            header {
+                padding-top: 0.25rem !important;
+                padding-bottom: 0.25rem !important;
+                height: auto !important;
+                min-height: 2.5rem;
+            }
+            #table-top {
+                align-items: flex-start !important;
+                padding-top: 2rem;
+                padding-bottom: 4rem;
+            }
+            #deck-area {
+                bottom: 0.5rem !important;
+                transform: translateX(-50%) scale(0.8) !important;
+            }
+        }
+
         body {
             background-color: var(--paper-bg);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
             color: var(--ink-black);
             font-family: 'Shippori Mincho', serif;
-            overflow: hidden; height: 100vh; height: 100dvh;
-            display: flex; flex-direction: column; touch-action: none;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
         }
-        .headline { font-family: 'Playfair Display', serif; }
 
-        /* --- Cards --- */
+        /* Typography */
+        .headline {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: -0.02em;
+        }
+
+        /* 3D Card Scene */
         .card-scene {
-            width: var(--card-w); height: var(--card-h);
-            position: absolute; transform-style: preserve-3d; cursor: grab;
-            opacity: 0; z-index: 10; touch-action: none;
-            margin-left: calc(var(--card-w) * -0.5);
-            margin-top: calc(var(--card-h) * -0.5);
+            width: var(--card-w);
+            height: var(--card-h);
+            perspective: 1000px;
+            position: absolute;
+            transform-style: preserve-3d;
+            cursor: grab;
+            opacity: 0;
+            z-index: 10;
+            /* ★重要: クリックイベントを受け付ける設定 */
+            pointer-events: auto;
+            touch-action: none; 
+            transition: width 0.3s, height 0.3s;
         }
-        .card-scene:active { cursor: grabbing; }
         
+        .card-scene:active {
+            cursor: grabbing;
+        }
+
         .card-obj {
-            width: 100%; height: 100%; position: relative;
-            transform-style: preserve-3d; border-radius: 6px;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            box-shadow: 2px 4px 8px rgba(0,0,0,0.3); pointer-events: none;
+            border-radius: 8px;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.4);
+            pointer-events: none;
         }
+
         .card-face {
-            position: absolute; width: 100%; height: 100%;
-            backface-visibility: hidden; border-radius: 6px;
-            overflow: hidden; border: 1px solid #444; background: #fff;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+            background: #fff;
         }
-        .card-face.front { transform: rotateY(180deg); display: flex; justify-content: center; align-items: center; }
+
+        .card-face.front {
+            transform: rotateY(180deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .card-face.back {
             background: #2a2a2a;
             background-image: repeating-linear-gradient(45deg, #333 0, #333 1px, #444 0, #444 50%);
         }
-        .card-face img { width: 100%; height: 100%; object-fit: cover; }
-        .card-obj.is-open { transform: rotateY(180deg); }
+        
+        .card-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-        /* --- Layout --- */
+        .card-obj.is-open {
+            transform: rotateY(180deg);
+        }
+
+        /* Layout Areas */
         #table-top {
-            position: relative; flex-grow: 1; width: 100%;
-            overflow: hidden; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 1;
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
         }
-        #spread-layer { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            max-width: 800px; left: 50%; transform: translateX(-50%);
-            pointer-events: none; z-index: 20; 
-        }
-        #deck-area {
-            position: absolute; bottom: 10%; left: 50%;
-            transform: translateX(-50%); width: var(--card-w); height: var(--card-h);
-            z-index: 30; transition: all 0.3s;
-        }
-        .deck-card {
-            position: absolute; inset: 0; border-radius: 6px;
-            border: 1px solid #333;
-            /* background: #333; <-- 削除 (画像を表示するため黒背景は不要) */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            overflow: hidden; /* 追加: 画像が角丸からはみ出さないように */
-        }
-        .shuffling .deck-card:nth-child(odd) { animation: shuffleShake 0.15s infinite alternate; }
-        .shuffling .deck-card:nth-child(even) { animation: shuffleShake 0.15s infinite alternate-reverse; }
-        @keyframes shuffleShake {
-            0% { transform: translate(0,0) rotate(0); }
-            25% { transform: translate(-10px, 0) rotate(-2deg); }
-            50% { transform: translate(0,0) rotate(0); }
-            75% { transform: translate(10px, 0) rotate(2deg); }
-            100% { transform: translate(0,0) rotate(0); }
+        #table-top::-webkit-scrollbar { 
+            display: none; 
         }
 
-        /* --- Modals --- */
+        #spread-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Deck */
+        #deck-area {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: var(--card-w);
+            height: var(--card-h);
+            z-index: 30;
+            transition: all 0.3s;
+        }
+
+        .deck-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        
+        @keyframes shuffleShake {
+            0% { transform: translateX(0) rotate(0); }
+            25% { transform: translateX(-15px) rotate(-2deg); }
+            50% { transform: translateX(0) rotate(0); }
+            75% { transform: translateX(15px) rotate(2deg); }
+            100% { transform: translateX(0) rotate(0); }
+        }
+
+        .shuffling .deck-card:nth-child(odd) {
+            animation: shuffleShake 0.15s infinite alternate;
+        }
+        .shuffling .deck-card:nth-child(even) {
+            animation: shuffleShake 0.15s infinite alternate-reverse;
+        }
+
+        /* Modals */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(44, 44, 44, 0.8);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 44, 44, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
             backdrop-filter: grayscale(100%) blur(2px);
         }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        
-        .paper-modal {
-            background: var(--paper-bg); border: 4px double var(--ink-black);
-            padding: 1.5rem; width: 90%; max-width: 400px; text-align: center;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.5); transform: scale(0.95);
-            transition: transform 0.2s; max-height: 90vh; overflow-y: auto;
-            position: relative;
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
         }
-        .modal-overlay.active .paper-modal { transform: scale(1); }
+        .paper-modal {
+            background: var(--paper-bg);
+            border: 4px double var(--ink-black);
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.5);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-overlay.active .paper-modal {
+            transform: scale(1);
+        }
+
+        /* Full Screen Modal for Cards */
+        .paper-modal.full-screen {
+            width: 95%;
+            height: 95%;
+            max-width: 100%;
+            max-height: 95vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
         
         .paper-btn {
-            background: var(--ink-black); color: var(--paper-bg); border: none;
-            padding: 10px 20px; font-family: 'Shippori Mincho', serif;
-            font-weight: bold; letter-spacing: 1px; cursor: pointer;
-            transition: all 0.2s; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            background: var(--ink-black);
+            color: var(--paper-bg);
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Shippori Mincho', serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
         }
-        .paper-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
-        .paper-btn.secondary { background: transparent; color: var(--ink-black); border: 2px solid var(--ink-black); }
-        
+        .paper-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+        .paper-btn.secondary {
+            background: transparent;
+            color: var(--ink-black);
+            border: 2px solid var(--ink-black);
+        }
+
         .paper-input {
-            width: 100%; background: transparent; border: none;
-            border-bottom: 2px solid var(--ink-black); padding: 10px;
-            font-family: 'Shippori Mincho', serif; font-size: 1.1rem;
-            color: var(--ink-black); outline: none; margin-bottom: 1rem; border-radius: 0;
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--ink-black);
+            padding: 10px;
+            font-family: 'Shippori Mincho', serif;
+            font-size: 1.1rem;
+            color: var(--ink-black);
+            outline: none;
+            margin-bottom: 1rem;
+            border-radius: 0;
         }
 
-        .btn-close-x {
-            position: absolute; top: 10px; right: 15px;
-            background: transparent; border: none; font-size: 1.5rem;
-            color: var(--ink-black); cursor: pointer; line-height: 1;
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: 90%;
+            pointer-events: none;
         }
-        .btn-close-x:hover { opacity: 0.7; }
-
-        #toast-container { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; pointer-events: none; }
         .toast {
-            background: var(--ink-black); color: var(--paper-bg); padding: 12px 20px;
-            margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            font-family: 'Shippori Mincho', serif; display: flex; align-items: center; justify-content: center;
-            animation: slideDown 0.3s ease-out; pointer-events: auto; border: 1px solid var(--paper-bg);
+            background: var(--ink-black);
+            color: var(--paper-bg);
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            font-family: 'Shippori Mincho', serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: slideDown 0.3s ease-out;
+            pointer-events: auto;
+            border: 1px solid var(--paper-bg);
         }
-        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-        /* --- Guide --- */
-        #guide-container { position: absolute; bottom: 0; right: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; padding: 10px; max-width: 60%; }
-        .guide-bubble {
-            background: #2c2c2c; color: #f4e4bc; padding: 12px; border-radius: 12px 12px 0 12px;
-            margin-bottom: 8px; border: 2px solid #f4e4bc; font-size: 0.85rem; font-weight: bold;
-            box-shadow: 4px 4px 0 rgba(0,0,0,0.3); opacity: 0; transform: scale(0.8); transition: all 0.3s;
+        /* Header Date Line */
+        .date-line {
+            padding: 4px 0;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
         }
-        .guide-bubble.show { opacity: 1; transform: scale(1); }
-        .guide-img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5)); }
+        
+        /* Guide Bubble */
+        .bubble-pop {
+            animation: popIn 0.3s ease-out forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Guide Container Position - Moved above footer */
+        #guide-container {
+            padding-bottom: 0 !important; 
+        }
+
     </style>
 </head>
 <body>
 
-    <header class="w-full px-4 py-2 bg-[#f4e4bc]/95 flex flex-col items-center shadow-sm z-50 relative">
-        <div class="w-full flex justify-between items-end border-b border-black/20 pb-1 mb-1 w-full">
-             <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700"></span>
-             <button id="btn-login-header" class="text-xs underline font-bold cursor-pointer text-gray-800 hover:text-red-900">ログイン</button>
+    <!-- Top Bar -->
+    <header class="shrink-0 w-full px-4 pt-2 pb-1 z-50 bg-[#f4e4bc]/90 flex flex-col items-center shadow-sm transition-all duration-300">
+        <div class="w-full flex justify-between items-center border-b-2 border-black/10 pb-1 mb-1 date-line">
+             <span id="current-date" class="text-xs font-serif tracking-widest text-gray-700">VOL. I</span>
+             <button id="btn-login-header" class="text-xs underline hover:text-red-900 font-bold cursor-pointer font-serif text-gray-800">ログイン</button>
         </div>
-        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-12 md:h-16 object-contain">
-        <div id="topic-display" class="hidden mt-1 text-center w-full border-t border-gray-400/50 pt-1">
-            <span class="text-xs mr-2 text-gray-600">テーマ:</span>
-            <span id="topic-text-content" class="font-bold text-red-900 text-sm"></span>
+        
+        <!-- Title Image -->
+        <img id="title-img" src="images/title.png" alt="The Daily Oracle" class="h-16 md:h-20 object-contain mb-1 drop-shadow-sm transition-all duration-300">
+
+        <!-- Topic Display -->
+        <div id="topic-display" class="hidden text-center border-t border-gray-400 pt-1 mt-1 w-full max-w-md">
+            <span class="text-xs text-gray-600 mr-2">テーマ:</span>
+            <span id="topic-text-content" class="font-bold text-ink-red truncate text-sm"></span>
         </div>
     </header>
 
-    <main id="table-top">
+    <!-- Main Table Area -->
+    <main id="table-top" class="relative">
         <div id="toast-container"></div>
+
+        <!-- Spread Layer -->
         <div id="spread-layer"></div>
-        
+
+        <!-- Deck Area -->
         <div id="deck-area">
+            <!-- Visual stack of cards -->
             <div id="deck-stack" class="relative w-full h-full cursor-pointer">
-                <div class="deck-card" style="transform: translate(0,0)">
-                    <img class="w-full h-full object-cover rounded-md deck-back-img">
+                <!-- Multiple dummy cards -->
+                <div class="deck-card" style="transform: translate(0, 0);">
+                    <img id="deck-back-1" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
-                <div class="deck-card" style="transform: translate(3px,3px)">
-                    <img class="w-full h-full object-cover rounded-md deck-back-img">
+                <div class="deck-card" style="transform: translate(2px, 2px);">
+                    <img id="deck-back-2" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
-                <div class="deck-card" style="transform: translate(6px,6px)">
-                    <img id="deck-top-img" class="w-full h-full object-cover rounded-md deck-back-img">
+                <div class="deck-card" style="transform: translate(4px, 4px);">
+                    <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
         </div>
 
-        <div id="guide-container">
-            <div id="guide-bubble" class="guide-bubble">ここにメッセージ</div>
-            <img id="guide-img" src="" class="guide-img">
+        <!-- Guide Character & Bubble -->
+        <div id="guide-container" class="absolute bottom-0 right-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-end pointer-events-none max-w-[70%] md:max-w-[40%]">
+            <div id="guide-bubble" class="bg-[#2c2c2c] text-[#f4e4bc] p-3 md:p-4 rounded-2xl rounded-br-none mb-2 border-2 border-[#f4e4bc] shadow-lg transform origin-bottom-right bubble-pop relative mr-8">
+                <p id="guide-text" class="font-bold text-xs md:text-base min-h-[1.5em] typing-cursor font-serif"></p>
+                <div class="absolute -bottom-2 right-0 w-4 h-4 bg-[#2c2c2c] border-r-2 border-b-2 border-[#f4e4bc] transform rotate-45"></div>
+            </div>
+            
+            <div class="w-28 h-28 md:w-40 md:h-40 relative mr-1 md:mr-2">
+                 <img id="guide-img" src="images/seer.png" onerror="this.src='https://placehold.co/150x150/1e1b4b/d4af37?text=Seer'" class="w-full h-full object-contain opacity-100 drop-shadow-xl">
+            </div>
         </div>
+
+        <!-- Helper Character (Left Bottom) -->
+        <div id="helper-container" class="absolute bottom-0 left-0 z-50 p-2 md:p-4 pb-0 flex flex-col items-start pointer-events-none max-w-[50%] md:max-w-[40%]">
+            <!-- Bubble for Spread Help -->
+            <div class="bg-[#2c2c2c] text-[#f4e4bc] p-1.5 px-2 rounded-2xl rounded-bl-none mb-1 border-2 border-[#f4e4bc] shadow-lg pointer-events-auto ml-2 relative">
+                <button id="btn-help-spread" class="block text-[9px] text-yellow-300 hover:text-yellow-100 underline text-left font-serif leading-none whitespace-nowrap">並べ方の解説</button>
+                <div class="absolute -bottom-1 left-0 w-2 h-2 bg-[#2c2c2c] border-l-2 border-b-2 border-[#f4e4bc] transform -rotate-45"></div>
+            </div>
+
+            <!-- Bubble for Card Help -->
+            <div class="bg-[#2c2c2c] text-[#f4e4bc] p-1.5 px-2 rounded-2xl rounded-bl-none mb-1 border-2 border-[#f4e4bc] shadow-lg pointer-events-auto ml-6 relative">
+                <button id="btn-help-card" class="block text-[9px] text-yellow-300 hover:text-yellow-100 underline text-left font-serif leading-none whitespace-nowrap">カードの解説</button>
+                <div class="absolute -bottom-1 left-0 w-2 h-2 bg-[#2c2c2c] border-l-2 border-b-2 border-[#f4e4bc] transform -rotate-45"></div>
+            </div>
+            
+            <div class="w-5 h-5 md:w-8 md:h-8 relative ml-1">
+                 <img id="helper-img" src="images/helper.png" onerror="this.src='https://placehold.co/150x150/5c5c5c/f4e4bc?text=Helper'" class="w-full h-full object-contain opacity-100 drop-shadow-xl transform scale-x-[-1]">
+            </div>
+        </div>
+
     </main>
 
-    <footer class="w-full bg-[#f4e4bc] border-t-2 border-black p-2 z-50 h-auto min-h-[80px] flex items-center justify-center">
-        <div class="flex flex-wrap justify-center items-center gap-2 w-full max-w-lg">
-            <div class="relative w-40">
-                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm rounded-none appearance-none cursor-pointer focus:outline-none">
+    <!-- Control Footer -->
+    <footer class="shrink-0 w-full bg-[#f4e4bc] border-t-2 border-black p-3 z-50 h-20">
+        <div class="flex flex-wrap justify-between items-center gap-2 max-w-md mx-auto">
+            
+            <div class="relative flex-grow">
+                <select id="spread-select" class="w-full bg-transparent border-2 border-black px-2 py-2 font-serif text-sm focus:outline-none rounded-none cursor-pointer appearance-none">
                     <option value="one_oracle">ワンオラクル (1枚)</option>
                     <option value="two_oracle">🔒 ツーオラクル (2枚)</option>
                     <option value="two_mind">🔒 ツーマインド (2枚)</option>
@@ -207,84 +445,84 @@
                     <option value="three_card">🔒 スリーカード (3枚)</option>
                     <option value="four_card">🔒 フォーカード (4枚)</option>
                 </select>
-                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-xs"><i class="fa-solid fa-caret-down"></i></div>
+                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <i class="fa-solid fa-caret-down"></i>
+                </div>
             </div>
-            <button id="btn-shuffle" class="paper-btn">シャッフル</button>
-            <button id="btn-open" class="paper-btn secondary hidden" disabled>開く</button>
-            <button id="btn-reset" class="paper-btn secondary hidden">もう一度</button>
-            <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden"><i class="fa-solid fa-share-nodes"></i></button>
+
+            <button id="btn-shuffle" class="paper-btn">
+                シャッフル
+            </button>
+            
+            <button id="btn-open" class="paper-btn secondary" disabled style="opacity: 0.5;">
+                開く
+            </button>
+            
+            <button id="btn-reset" class="paper-btn secondary hidden">
+                もう一度
+            </button>
+
+            <button id="btn-share" class="paper-btn bg-white text-black border-2 border-black hidden items-center gap-2">
+                <i class="fa-solid fa-share-nodes"></i>
+            </button>
         </div>
     </footer>
 
+    <!-- Login Modal -->
     <div id="login-modal" class="modal-overlay">
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">会員ログイン</h2>
             <p class="text-sm mb-6 text-gray-700">
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
-            <form id="form-login" autocomplete="off">
-                <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)" autocomplete="username" required>
-                <input type="password" id="login-pass" class="paper-input" placeholder="Password" autocomplete="current-password" required>
-                <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
-                
-                <div class="flex flex-col gap-3 mt-4">
-                    <button type="submit" id="btn-submit-login" class="paper-btn w-full">認証する</button>
-                    <div class="flex justify-between items-center text-xs mt-2">
-                        <button type="button" id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
-                        <a href="https://savepoint.design4qol.com" target="_blank" class="underline text-blue-800 hover:text-blue-600">新規登録する</a>
-                    </div>
-                    <button type="button" id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+            
+            <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)">
+            <input type="password" id="login-pass" class="paper-input" placeholder="Password">
+            
+            <div id="login-error" class="text-red-700 text-sm mb-4 hidden">IDまたはパスワードが違います</div>
+
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btn-submit-login" class="paper-btn w-full">認証する</button>
+                <div class="flex justify-between items-center text-xs mt-2">
+                    <button id="link-forgot-pass" class="underline text-blue-800 hover:text-blue-600">パスワードを忘れた</button>
+                    <a href="https://savepoint.design4qol.com" target="_blank" class="underline text-blue-800 hover:text-blue-600">新規登録する</a>
                 </div>
-            </form>
+                <button id="btn-close-login" class="underline text-sm text-gray-600 mt-2">閉じる</button>
+            </div>
         </div>
     </div>
 
+    <!-- Password Reset Modal -->
     <div id="reset-modal" class="modal-overlay">
         <div class="paper-modal">
-            <button type="button" id="btn-x-reset" class="btn-close-x">×</button>
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">パスワード再設定</h2>
             <p class="text-sm mb-6 text-gray-700">
                 登録しているメールアドレスを入力してください。<br>
                 再設定用のリンクを送信します。
             </p>
-            <form id="form-reset" autocomplete="off">
-                <input type="email" id="reset-email" class="paper-input" placeholder="Email Address" required>
-                <div id="reset-msg" class="text-sm mb-4 hidden"></div>
-                <div class="flex flex-col gap-3 mt-4">
-                    <button type="submit" class="paper-btn w-full">送信</button>
-                    <button type="button" id="btn-back-top" class="underline text-sm text-gray-600">TOPに戻る</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="account-modal" class="modal-overlay">
-        <div class="paper-modal">
-            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">マイメニュー</h2>
-            <p id="account-name" class="text-sm mb-6 font-bold"></p>
             
-            <div id="menu-main" class="flex flex-col gap-3">
-                <button id="btn-to-changepass" class="paper-btn secondary">パスワード変更</button>
-                <button id="btn-do-logout" class="paper-btn">ログアウト</button>
-                <button id="btn-close-account" class="underline text-sm text-gray-600 mt-2">閉じる</button>
-            </div>
+            <input type="email" id="reset-email" class="paper-input" placeholder="Email Address">
+            
+            <div id="reset-msg" class="text-sm mb-4 hidden"></div>
 
-            <form id="form-change-pass" class="hidden text-left" autocomplete="off">
-                <p class="text-xs mb-2 text-gray-600">現在のパスワードと新しいパスワードを入力してください。</p>
-                <input type="password" id="cp-old" class="paper-input" placeholder="現在のパスワード" required>
-                <input type="password" id="cp-new" class="paper-input" placeholder="新しいパスワード" required>
-                <div id="cp-msg" class="text-sm mb-2 hidden"></div>
-                <button type="submit" class="paper-btn w-full mb-2">変更する</button>
-                <button type="button" id="btn-back-account" class="underline text-sm text-gray-600 w-full text-center">戻る</button>
-            </form>
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btn-submit-reset" class="paper-btn w-full">送信</button>
+                <button id="btn-close-reset" class="underline text-sm text-gray-600">キャンセル</button>
+            </div>
         </div>
     </div>
 
+    <!-- Topic Input Modal -->
     <div id="topic-modal" class="modal-overlay">
         <div class="paper-modal">
             <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">占いのテーマ</h2>
-            <p class="text-sm mb-6 text-gray-700 text-left">今日あなたは何を知りたいですか？</p>
-            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて..." autocomplete="off">
+            <p class="text-sm mb-6 text-gray-700 text-left">
+                今日あなたは何を知りたいですか？<br>
+                結果は運営元へ記録・送信されます。
+            </p>
+            
+            <input type="text" id="topic-input" class="paper-input" placeholder="例: 今後のキャリアについて...">
+
             <div class="flex flex-col gap-3 mt-4">
                 <button id="btn-submit-topic" class="paper-btn w-full">占いを始める</button>
                 <button id="btn-cancel-topic" class="underline text-sm text-gray-600">スキップ (テーマなし)</button>
@@ -292,343 +530,961 @@
         </div>
     </div>
 
+    <!-- Spread Help Modal -->
+    <div id="spread-help-modal" class="modal-overlay">
+        <div class="paper-modal text-left">
+            <h2 class="headline text-2xl mb-4 border-b-2 border-black pb-2">配列（スプレッド）解説</h2>
+            <div class="text-sm mb-6 text-gray-700 space-y-3 h-64 overflow-y-auto pr-2">
+                <p class="text-xs">
+                    <strong>ワンオラクル:</strong> シンプルな1枚引き。イエス・ノーや一日の運勢に。<br>
+                    <strong>ツーオラクル:</strong> 結果と対策。問題の原因と解決の糸口を探ります。<br>
+                    <strong>ツーマインド:</strong> 顕在意識と潜在意識。自分の本当の気持ちを知りたい時に。<br>
+                    <strong>シンプルクロス:</strong> 現状と障害。何が道を阻んでいるのかを明確にします。<br>
+                    <strong>スリーカード:</strong> 過去・現在・未来。時間の流れに沿って状況を読み解きます。<br>
+                    <strong>フォーカード:</strong> 問題解決。現状、障害、対策、結果の4枚で深く分析します。
+                </p>
+                <div class="mt-4 p-2 bg-gray-100 rounded text-xs">
+                    より詳しい解説は会員サイト(Save Point)をご覧ください。
+                </div>
+            </div>
+            <div class="text-center">
+                <button id="btn-close-spread-help" class="paper-btn w-full">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★ NEW: Card Help Modal (Full Screen with Details) -->
+    <div id="card-help-modal" class="modal-overlay">
+        <div class="paper-modal full-screen bg-[#f4e4bc] relative flex flex-col">
+            <!-- Header -->
+            <div class="flex justify-between items-center border-b-4 double border-black p-4 shrink-0 bg-[#f4e4bc] z-10">
+                <h2 class="headline text-xl md:text-2xl font-bold">大アルカナ解説</h2>
+                <button id="btn-close-card-help" class="text-2xl font-bold p-2 hover:text-red-700 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- Scrollable Content -->
+            <div class="flex-grow overflow-y-auto p-4 space-y-8 pb-20">
+                <!-- 0. The Fool -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/0.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=0';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">0. 愚者 (The Fool)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 始まり、自由、無邪気、冒険、無計画。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「おっちょこちょいな買い物」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">財布を忘れて買い物に出かける主婦。足元の段差でつまずきそうだが、空にはのどかな太陽。自由で無邪気なスタート。</p>
+                    </div>
+                </div>
+
+                <!-- 1. The Magician -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/1.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=1';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">I. 魔術師 (The Magician)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 創造性、技術、道具を使いこなす、自信。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「日曜大工のお父さん」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">庭で盆栽の手入れや日曜大工をする頑固親父。作業台には四大要素（金槌、湯呑み、ハサミ、小銭）が並ぶ。創造と技術の象徴。</p>
+                    </div>
+                </div>
+
+                <!-- 2. The High Priestess -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/2.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=2';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">II. 女教皇 (The High Priestess)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 知恵、静寂、直感、神秘、勉学。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「静かなる母の知恵」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">縁側で静かに繕い物や家計簿をつける母。床の間には掛け軸があり、静かな知性を感じさせる。</p>
+                    </div>
+                </div>
+
+                <!-- 3. The Empress -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/3.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=3';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">III. 女帝 (The Empress)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 豊穣、母性、家庭の繁栄、愛、美。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「若奥様の奮闘と幸せ」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">山盛りの食材に囲まれて料理する若奥様。足元で子供が元気に遊ぶ、豊かで活気ある家庭の象徴。</p>
+                    </div>
+                </div>
+
+                <!-- 4. The Emperor -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/4.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=4';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">IV. 皇帝 (The Emperor)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 父性、権威、秩序、安定、責任。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「高度経済成長の戦士」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">オフィスで黒電話で指示を出す恰幅の良い上司。背景にはビル建設の風景。頼りがいのあるリーダー。</p>
+                    </div>
+                </div>
+
+                <!-- 5. The Hierophant -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/5.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=5';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">V. 教皇 (The Hierophant)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 伝統、教え、社会規範、助言者、先生。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「先生の書斎」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">書斎でパイプをくゆらせながら語る小説家の先生。教えを乞う若者たち。知識と良識の象徴。</p>
+                    </div>
+                </div>
+
+                <!-- 6. The Lovers -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/6.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=6';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">VI. 恋人たち (The Lovers)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 愛、調和、選択、パートナーシップ。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「運命のお見合い」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">デパートの食堂で向かい合う若い二人。テーブルにはクリームソーダ。仲人がニコニコと見守る。</p>
+                    </div>
+                </div>
+
+                <!-- 7. The Chariot -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/7.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=7';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">VII. 戦車 (The Chariot)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 勝利、前進、コントロール、意志の強さ、移動。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「御用聞きはつらいよ」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">重たい荷物を積んだ自転車で坂道を漕ぐ配達員。汗だくになりながらも力強く前進する姿。</p>
+                    </div>
+                </div>
+
+                <!-- 8. Strength -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/8.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=8';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">VIII. 力 (Strength)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 内なる力、忍耐、優しさによるコントロール、勇気。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「優しさは強さ」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">暴れようとする猫を優しく抱きしめてなだめる少女。力づくではなく、優しさで相手を落ち着かせる。</p>
+                    </div>
+                </div>
+
+                <!-- 9. The Hermit -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/9.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=9';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">IX. 隠者 (The Hermit)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 内省、探求、孤独、指導者、真理を求める。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「深夜の受験勉強」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">深夜、小さな明かりの下で参考書と格闘する浪人生。孤独な戦いと内省の時間。</p>
+                    </div>
+                </div>
+
+                <!-- 10. Wheel of Fortune -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/10.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=10';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">X. 運命の輪 (Wheel of Fortune)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 変化、サイクル、運命の浮き沈み、チャンス。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「家族団らんのちゃぶ台」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">回転するちゃぶ台の周りに、朝・昼・夕・夜の家族の営みと、四季のアイコン。巡りゆく日常のサイクル。</p>
+                    </div>
+                </div>
+
+                <!-- 11. Justice -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/11.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=11';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XI. 正義 (Justice)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 公平、均衡、原因と結果、法律、正しさ。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「町の平和を守る人」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">交番の前で敬礼するおまわりさん。警棒と落とし物ノートを持ち、公平な視点で町を見守る。</p>
+                    </div>
+                </div>
+
+                <!-- 12. The Hanged Man -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/12.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=12';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XII. 吊るされた男 (The Hanged Man)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 試練、忍耐、視点を変える、自己犠牲、動けない状態。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「サラリーマンの受難」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">満員電車でつり革にぶら下がり耐えるサラリーマン。苦しそうだが悟りを開いた表情。自己犠牲。</p>
+                    </div>
+                </div>
+
+                <!-- 13. Death -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/13.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=13';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XIII. 死神 (Death)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 終焉、変化、新しい始まり、断捨離。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「いたずら、バレる（大目玉）」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">父親に雷を落とされる腕白坊主。鎌の代わりに丸めた新聞紙。平穏な時間の終わりとお説教タイムの始まり。</p>
+                    </div>
+                </div>
+
+                <!-- 14. Temperance -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/14.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=14';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XIV. 節制 (Temperance)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 調整、バランス、統合、穏やかさ、中庸。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「噂話のバランス調整」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">井戸端会議をする主婦たち。情報を流し、人間関係を調整する日常のバランス感覚。</p>
+                    </div>
+                </div>
+
+                <!-- 15. The Devil -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/15.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=15';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XV. 悪魔 (The Devil)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 誘惑、欲望、束縛、依存。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「つまみ食いの誘惑」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">揚げたてのコロッケに手を伸ばす子供と猫。目には欲望の炎。「食い意地」という鎖。</p>
+                    </div>
+                </div>
+
+                <!-- 16. The Tower -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/16.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=16';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XVI. 塔 (The Tower)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 突然の崩壊、予期せぬ出来事、ショック、啓示。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「ドタバタ大惨事（ふすま倒し）」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">追いかけっこで障子に激突し倒壊。舞い散る障子紙と驚く家族。日常の中の突然のハプニング。</p>
+                    </div>
+                </div>
+
+                <!-- 17. The Star -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/17.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=17';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XVII. 星 (The Star)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 希望、インスピレーション、癒し、純粋さ。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「見上げてごらん夜の星を」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">夏の夜、縁側で夜空を見上げる子供たち。大きな一番星が希望を照らす。足元には花火のバケツ。</p>
+                    </div>
+                </div>
+
+                <!-- 18. The Moon -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/18.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=18';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XVIII. 月 (The Moon)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 不安、幻想、潜在意識、曖昧さ、夜の世界。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「夜の町の怪しい影」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">深夜の路地裏。泥棒と酔っ払いのシルエット。野良犬と猫が対峙する、少し不安な夜の顔。</p>
+                    </div>
+                </div>
+
+                <!-- 19. The Sun -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/19.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=19';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XIX. 太陽 (The Sun)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 成功、喜び、活力、無邪気さ、エネルギー。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「空き地の野球大会」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">ホームランを打って歓声を上げる子供たち。入道雲とニコニコ笑う太陽。爆発的なエネルギーと喜び。</p>
+                    </div>
+                </div>
+
+                <!-- 20. Judgement -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/20.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=20';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XX. 審判 (Judgement)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 復活、覚醒、呼びかけ、結果が出る、新しい段階。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「朝の目覚めとラッパの音」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">目覚まし時計が鳴り響き、布団から飛び起きる家族。新しい一日（新しい段階）への強制的な目覚め。</p>
+                    </div>
+                </div>
+
+                <!-- 21. The World -->
+                <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
+                    <img src="images/21.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=21';">
+                    <div class="text-left flex-1">
+                        <h3 class="font-bold text-lg mb-2 font-serif">XXI. 世界 (The World)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 完成、達成、統合、ハッピーエンド、完璧な調和。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「日曜日の夕方（エンディング）」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">家族全員がリズムに合わせて家へ入っていく後ろ姿。一つのサイクルの完成と、変わらない日常の幸せ。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxL-hqL2SVHgDOwX85-7v4H9CxKmmTguH1fbppqD9nHKwQLgCrg2-rYItj9tirF7_rk/exec"; 
+        /**
+         * THE DAILY ORACLE - APP LOGIC
+         */
 
-        const IMG_PATH = 'images/';
+        // ==========================================
+        //  CONFIG
+        // ==========================================
+        const IMG_FOLDER = 'images/';  
+        const IMG_EXT = '.jpg';        
         const BACK_IMG = 'back.jpg';
-        const SEER_IMG = 'seer.png';
+        const SEER_IMG = 'seer.png'; 
+        const HELPER_IMG = 'helper.png'; 
+        
+        // ★ Google Apps Script URL
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
 
-        const SPREADS = {
-            'one_oracle':   { count: 1, pos: [{x:50, y:45}], login: false },
-            'two_oracle':   { count: 2, pos: [{x:35, y:45}, {x:65, y:45}], login: true },
-            'two_mind':     { count: 2, pos: [{x:50, y:30}, {x:50, y:65}], login: true },
-            'simple_cross': { count: 2, pos: [{x:50, y:45}, {x:50, y:45, rot:90}], login: true },
-            'three_card':   { count: 3, pos: [{x:20, y:45}, {x:50, y:45}, {x:80, y:45}], login: true },
-            'four_card':    { count: 4, pos: [{x:30, y:30}, {x:70, y:30}, {x:30, y:65}, {x:70, y:65}], login: true }
+        const TOTAL_CARDS = 22; 
+        const SHUFFLE_CARD_COUNT = 40;
+        
+        const SPREAD_CONFIGS = {
+            'one_oracle': { count: 1, pos: [{x:50, y:40}], loginReq: false },
+            'two_oracle': { count: 2, pos: [{x:35, y:40}, {x:65, y:40}], loginReq: true },
+            'two_mind':   { count: 2, pos: [{x:50, y:25}, {x:50, y:60}], loginReq: true },
+            'simple_cross': { count: 2, pos: [{x:50, y:40}, {x:50, y:40, cross: true}], loginReq: true },
+            'three_card': { count: 3, pos: [{x:20, y:40}, {x:50, y:40}, {x:80, y:40}], loginReq: true },
+            'four_card':  { count: 4, pos: [{x:25, y:25}, {x:75, y:25}, {x:25, y:60}, {x:75, y:60}], loginReq: true }
         };
+        
+        const VALID_ID = "admin";
+        const VALID_PASS = "secret";
 
-        let state = { deck:[], drawn:[], phase:'IDLE', user:null, topic:'' };
+        // --- State ---
+        let deck = [];
+        let drawnCards = [];
         let currentSpread = 'one_oracle';
+        let currentState = 'IDLE'; 
+        let pickCount = 0;
+        let isLoggedIn = false;
+        let currentTopic = "";
+        let lastValidSpread = 'one_oracle';
+        let typeInterval;
+        let isDragging = false;
+        let currentDragCard = null;
+        let startX, startY, initialLeft, initialTop;
+        
+        let loginUser = { name: '', email: '' };
 
-        const ui = {
-            spread: document.getElementById('spread-layer'),
-            deck: document.getElementById('deck-area'),
-            deckStack: document.getElementById('deck-stack'),
-            guideTxt: document.getElementById('guide-bubble'),
-            guideImg: document.getElementById('guide-img'),
-            select: document.getElementById('spread-select'),
-            btnLoginHead: document.getElementById('btn-login-header'),
-            modalLogin: document.getElementById('login-modal'),
-            modalReset: document.getElementById('reset-modal'),
-            modalAccount: document.getElementById('account-modal'), 
-            modalTopic: document.getElementById('topic-modal'),
-            btnShuffle: document.getElementById('btn-shuffle'),
-            btnOpen: document.getElementById('btn-open'),
-            btnReset: document.getElementById('btn-reset'),
-            btnShare: document.getElementById('btn-share'),
-            formLogin: document.getElementById('form-login'),
-            formReset: document.getElementById('form-reset'),
-            formChangePass: document.getElementById('form-change-pass')
-        };
+        // --- DOM Elements ---
+        const uiSpreadSelect = document.getElementById('spread-select');
+        const uiBtnShuffle = document.getElementById('btn-shuffle');
+        const uiBtnOpen = document.getElementById('btn-open');
+        const uiBtnReset = document.getElementById('btn-reset');
+        const uiBtnShare = document.getElementById('btn-share');
+        
+        const uiDeckStack = document.getElementById('deck-stack');
+        const uiDeckArea = document.getElementById('deck-area');
+        const uiSpreadLayer = document.getElementById('spread-layer');
+        const uiTopicDisplay = document.getElementById('topic-display');
+        const uiTopicText = document.getElementById('topic-text-content');
+        const uiDate = document.getElementById('current-date');
+        const uiToastContainer = document.getElementById('toast-container');
+        
+        const uiGuideText = document.getElementById('guide-text');
+        const uiGuideBubble = document.getElementById('guide-bubble');
+        const uiGuideImg = document.getElementById('guide-img');
+        const uiHelperImg = document.getElementById('helper-img');
+        const uiDeckImgs = [
+            document.getElementById('deck-back-1'),
+            document.getElementById('deck-back-2'),
+            document.getElementById('deck-back-3')
+        ];
 
+        const uiLoginModal = document.getElementById('login-modal');
+        const uiResetModal = document.getElementById('reset-modal');
+        const uiTopicModal = document.getElementById('topic-modal');
+        
+        // Help Modals
+        const uiSpreadHelpModal = document.getElementById('spread-help-modal');
+        const uiCardHelpModal = document.getElementById('card-help-modal');
+        
+        const uiLoginId = document.getElementById('login-id');
+        const uiLoginPass = document.getElementById('login-pass');
+        const uiLoginError = document.getElementById('login-error');
+        const uiTopicInput = document.getElementById('topic-input');
+        const uiResetEmail = document.getElementById('reset-email');
+        const uiResetMsg = document.getElementById('reset-msg');
+        
+        const uiBtnSubmitLogin = document.getElementById('btn-submit-login');
+        const uiLinkForgotPass = document.getElementById('link-forgot-pass');
+        const uiBtnSubmitReset = document.getElementById('btn-submit-reset');
+
+        // --- Init ---
         function init() {
-            window.onbeforeunload = function() {}; 
+            // Set Date
+            const d = new Date();
+            uiDate.innerText = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} 発行`;
 
-            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ja-JP') + " 発行";
-            ui.guideImg.src = IMG_PATH + SEER_IMG;
+            setupImages();
+            populateDeck();
             
-            // 修正: deck-top-imgだけでなく、全ての.deck-back-imgに画像をセット
-            document.querySelectorAll('.deck-back-img').forEach(img => {
-                img.src = IMG_PATH + BACK_IMG;
-            });
+            // Event Listeners
+            uiSpreadSelect.addEventListener('change', handleSpreadChange);
             
-            populateDeck(); 
-            restoreSession(); 
-
-            // --- Event Listeners ---
-
-            // Login Button -> Account Menu or Login Modal
-            ui.btnLoginHead.addEventListener('click', () => {
-                if(state.user) openAccountModal();
-                else show(ui.modalLogin);
-            });
-            document.getElementById('btn-close-login').addEventListener('click', () => hide(ui.modalLogin));
-            ui.formLogin.addEventListener('submit', (e) => { e.preventDefault(); tryLogin(); });
-            
-            // Password Reset
-            document.getElementById('link-forgot-pass').addEventListener('click', () => { 
-                hide(ui.modalLogin); 
-                show(ui.modalReset); 
+            document.getElementById('btn-login-header').addEventListener('click', () => {
+                if(isLoggedIn) handleLogout();
+                else showModal(uiLoginModal);
             });
             
-            // リセットモーダルの ×ボタン
-            document.getElementById('btn-x-reset').addEventListener('click', () => hide(ui.modalReset));
+            uiBtnSubmitLogin.addEventListener('click', handleLoginSubmit);
+            document.getElementById('btn-close-login').addEventListener('click', () => hideModal(uiLoginModal));
             
-            // リセットモーダルの TOPに戻るボタン
-            document.getElementById('btn-back-top').addEventListener('click', () => hide(ui.modalReset));
-
-            ui.formReset.addEventListener('submit', (e) => { e.preventDefault(); tryReset(); });
-
-
-            // Account Menu Listeners
-            document.getElementById('btn-close-account').addEventListener('click', () => hide(ui.modalAccount));
-            document.getElementById('btn-do-logout').addEventListener('click', logout);
-            document.getElementById('btn-to-changepass').addEventListener('click', () => {
-                document.getElementById('menu-main').classList.add('hidden');
-                ui.formChangePass.classList.remove('hidden');
+            uiLinkForgotPass.addEventListener('click', () => {
+                hideModal(uiLoginModal);
+                showModal(uiResetModal);
             });
-            document.getElementById('btn-back-account').addEventListener('click', () => {
-                ui.formChangePass.classList.add('hidden');
-                document.getElementById('menu-main').classList.remove('hidden');
+            
+            uiBtnSubmitReset.addEventListener('click', handleResetSubmit);
+            document.getElementById('btn-close-reset').addEventListener('click', () => {
+                hideModal(uiResetModal);
+                showModal(uiLoginModal);
             });
-            ui.formChangePass.addEventListener('submit', (e) => { e.preventDefault(); tryChangePass(); });
-
-            // Game
-            ui.select.addEventListener('change', (e) => {
-                if(SPREADS[e.target.value].login && !state.user) {
-                    show(ui.modalLogin);
-                    ui.select.value = currentSpread;
-                } else {
-                    currentSpread = e.target.value;
-                    resetGame();
-                }
-            });
-            ui.btnShuffle.addEventListener('click', startShuffle);
-            ui.deckStack.addEventListener('click', pickCard);
-            ui.btnOpen.addEventListener('click', openCards);
-            ui.btnReset.addEventListener('click', () => resetGame(true));
-            ui.btnShare.addEventListener('click', shareResult);
-
-            document.getElementById('btn-submit-topic').addEventListener('click', () => {
-                state.topic = document.getElementById('topic-input').value;
-                hide(ui.modalTopic); updateTopicUI(); guide("シャッフルしてください。");
-            });
+            
+            document.getElementById('btn-submit-topic').addEventListener('click', handleTopicSubmit);
             document.getElementById('btn-cancel-topic').addEventListener('click', () => {
-                state.topic = "テーマなし";
-                hide(ui.modalTopic); updateTopicUI(); guide("シャッフルしてください。");
+                currentTopic = "テーマなし"; 
+                hideModal(uiTopicModal);
+                updateTopicUI();
+                setStatus("スプレッドを選んでシャッフルしてください。");
             });
-
-            // Drag
-            document.addEventListener('mousedown', dragStart);
-            document.addEventListener('touchstart', dragStart, {passive: false});
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('touchmove', dragMove, {passive: false});
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('touchend', dragEnd);
             
-            window.addEventListener('resize', () => { if(state.phase === 'FINISHED') repositionCards(); });
+            // Helper Events
+            document.getElementById('btn-help-spread').addEventListener('click', () => showModal(uiSpreadHelpModal));
+            document.getElementById('btn-close-spread-help').addEventListener('click', () => hideModal(uiSpreadHelpModal));
+            
+            document.getElementById('btn-help-card').addEventListener('click', () => showModal(uiCardHelpModal));
+            document.getElementById('btn-close-card-help').addEventListener('click', () => hideModal(uiCardHelpModal));
 
-            guide("スプレッド（並べ方）を選んで開始してください。");
+
+            uiBtnShuffle.addEventListener('click', startShuffle);
+            uiDeckStack.addEventListener('click', handleDeckClick);
+            uiBtnOpen.addEventListener('click', startReveal);
+            
+            uiBtnReset.addEventListener('click', () => resetGame(true));
+            
+            uiBtnShare.addEventListener('click', handleNativeShare);
+            
+            // Drag Events
+            document.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('touchstart', handleDragStart, {passive: false});
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('touchmove', handleDragMove, {passive: false});
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchend', handleDragEnd);
+            
+            window.addEventListener('resize', handleResize);
+
+            setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
-        function populateDeck() { state.deck = Array.from({length:22}, (_,i)=>i); }
-
-        // --- Auth & Account Functions ---
-        function restoreSession() {
-            const saved = localStorage.getItem('tarot_user');
-            if(saved) {
-                state.user = JSON.parse(saved);
-                updateAuthUI();
-                showToast("ログイン済み: " + state.user.name, "success");
+        // --- Logic ---
+        
+        function handleResize() {
+            if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
+                setTimeout(repositionCards, 200);
             }
         }
 
-        async function tryLogin() {
-            const id = document.getElementById('login-id').value;
-            const pass = document.getElementById('login-pass').value;
+        function repositionCards() {
+            const conf = SPREAD_CONFIGS[currentSpread];
+            const spreadRect = uiSpreadLayer.getBoundingClientRect();
+            
+            drawnCards.forEach((item, index) => {
+                const el = item.el;
+                const pos = conf.pos[index];
+                
+                const cardW = el.offsetWidth;
+                const cardH = el.offsetHeight;
+
+                const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
+                const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
+                
+                el.style.transition = 'left 0.3s, top 0.3s';
+                el.style.left = `${targetX}px`;
+                el.style.top = `${targetY}px`;
+            });
+        }
+        
+        function setupImages() {
+            if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
+            if(uiHelperImg) uiHelperImg.src = IMG_FOLDER + HELPER_IMG;
+            uiDeckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
+        }
+
+        function populateDeck() {
+            deck = [];
+            for(let i=0; i<=21; i++) deck.push(i); 
+        }
+
+        function handleSpreadChange(e) {
+            const val = e.target.value;
+            const conf = SPREAD_CONFIGS[val];
+            
+            if (conf.loginReq && !isLoggedIn) {
+                showModal(uiLoginModal);
+                uiSpreadSelect.value = lastValidSpread;
+                return;
+            }
+            currentSpread = val;
+            lastValidSpread = val;
+            resetGame(false); 
+        }
+
+        function handleLoginSubmit() {
+            const id = uiLoginId.value;
+            const pass = uiLoginPass.value;
             if(!id || !pass) return;
 
-            const btn = document.getElementById('btn-submit-login');
-            const err = document.getElementById('login-error');
-            btn.disabled = true; btn.innerText = "認証中...";
-            err.classList.add('hidden');
+            uiBtnSubmitLogin.disabled = true;
+            uiBtnSubmitLogin.innerText = "認証中...";
+            uiLoginError.classList.add('hidden');
 
-            try {
-                const res = await fetch(API_ENDPOINT, {
-                    method: 'POST', redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ type: 'auth', id: id, password: pass })
-                });
-                const data = await res.json();
+            const payload = {
+                type: 'auth',
+                id: id,
+                password: pass
+            };
+
+            fetch(API_ENDPOINT, {
+                method: 'POST',
+                redirect: 'follow', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
                 if(data.status === 'success') {
-                    state.user = { name: data.username, email: id };
-                    localStorage.setItem('tarot_user', JSON.stringify(state.user));
-                    hide(ui.modalLogin); updateAuthUI();
-                    showToast("ログインしました", "success"); resetGame(); 
+                    isLoggedIn = true;
+                    loginUser.name = data.username || "User";
+                    loginUser.email = data.email || id;
+                    hideModal(uiLoginModal);
+                    updateLoginStateUI();
+                    showToast("ログインしました。", "success");
+                    resetGame(false);
                 } else {
-                    err.innerText = data.message || "認証失敗"; err.classList.remove('hidden');
+                    const msg = data.message ? `エラー: ${data.message}` : "IDまたはパスワードが違います";
+                    uiLoginError.innerText = msg;
+                    uiLoginError.classList.remove('hidden');
                 }
-            } catch(e) { err.innerText = "通信エラー"; err.classList.remove('hidden'); }
-            finally { btn.disabled = false; btn.innerText = "認証する"; }
+            })
+            .catch(err => {
+                console.error(err);
+                if(id === "admin" && pass === "secret") {
+                     isLoggedIn = true;
+                     loginUser.name = "Demo User";
+                     loginUser.email = "demo@example.com";
+                     hideModal(uiLoginModal);
+                     updateLoginStateUI();
+                     showToast("ログインしました。(Demo)", "success");
+                     resetGame(false);
+                } else {
+                     uiLoginError.innerText = "通信エラー";
+                     uiLoginError.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                uiBtnSubmitLogin.disabled = false;
+                uiBtnSubmitLogin.innerText = "認証する";
+            });
         }
-
-        async function tryReset() {
-            const email = document.getElementById('reset-email').value;
-            const msg = document.getElementById('reset-msg');
+        
+        function handleResetSubmit() {
+            const email = uiResetEmail.value;
             if(!email) return;
-            msg.className = "text-sm mb-4 text-gray-600"; msg.innerText = "送信中..."; msg.classList.remove('hidden');
-            try {
-                const res = await fetch(API_ENDPOINT, {
-                    method: 'POST', redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ type: 'reset', email: email })
-                });
-                const data = await res.json();
-                msg.innerText = data.status === 'success' ? "再設定メールを送信しました" : "メールアドレスが見つかりません";
-                if(data.status !== 'success') msg.className = "text-sm mb-4 text-red-600";
-            } catch(e) { msg.innerText = "エラー"; msg.className = "text-sm mb-4 text-red-600"; }
-        }
-
-        async function tryChangePass() {
-            const oldP = document.getElementById('cp-old').value;
-            const newP = document.getElementById('cp-new').value;
-            const msg = document.getElementById('cp-msg');
             
-            if(!oldP || !newP) return;
-            msg.className = "text-sm mb-2 text-gray-600"; msg.innerText = "更新中..."; msg.classList.remove('hidden');
+            uiResetMsg.classList.remove('hidden');
+            uiResetMsg.classList.remove('text-red-600');
+            uiResetMsg.classList.add('text-gray-600');
+            uiResetMsg.innerText = "送信中...";
             
-            try {
-                const res = await fetch(API_ENDPOINT, {
-                    method: 'POST', redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ type: 'change_pass', id: state.user.email, oldPass: oldP, newPass: newP })
-                });
-                const data = await res.json();
+            const payload = {
+                type: 'reset',
+                email: email
+            };
+            
+            fetch(API_ENDPOINT, {
+                method: 'POST',
+                redirect: 'follow', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
                 if(data.status === 'success') {
-                    alert("パスワードを変更しました。");
-                    hide(ui.modalAccount);
+                    uiResetMsg.innerText = "再設定メールを送信しました。";
                 } else {
-                    msg.innerText = data.message || "変更に失敗しました";
-                    msg.className = "text-sm mb-2 text-red-600";
+                    uiResetMsg.classList.add('text-red-600');
+                    uiResetMsg.innerText = "メールアドレスが見つかりませんでした。";
                 }
-            } catch(e) {
-                msg.innerText = "通信エラー"; msg.className = "text-sm mb-2 text-red-600";
-            }
-        }
-
-        function openAccountModal() {
-            document.getElementById('account-name').innerText = "Account: " + state.user.name;
-            document.getElementById('menu-main').classList.remove('hidden');
-            ui.formChangePass.classList.add('hidden');
-            document.getElementById('cp-old').value = "";
-            document.getElementById('cp-new').value = "";
-            document.getElementById('cp-msg').classList.add('hidden');
-            show(ui.modalAccount);
-        }
-
-        function logout() {
-            state.user = null;
-            localStorage.removeItem('tarot_user');
-            hide(ui.modalAccount);
-            updateAuthUI();
-            currentSpread = 'one_oracle'; ui.select.value = 'one_oracle';
-            resetGame(true);
-            showToast("ログアウトしました");
-        }
-
-        function updateAuthUI() {
-            ui.btnLoginHead.innerText = state.user ? "アカウント" : "ログイン"; 
-            Array.from(ui.select.options).forEach(opt => {
-                if(state.user) opt.text = opt.text.replace("🔒 ", "");
-                else if(SPREADS[opt.value].login && !opt.text.includes("🔒")) opt.text = "🔒 " + opt.text;
+            })
+            .catch(err => {
+                 uiResetMsg.classList.add('text-red-600');
+                 uiResetMsg.innerText = "送信エラーが発生しました。";
             });
         }
 
-        // --- Game Logic ---
-        function resetGame(full = false) {
-            state.phase = 'IDLE'; state.drawn = []; populateDeck(); 
-            ui.spread.innerHTML = ''; ui.deck.classList.remove('hidden'); ui.deckStack.classList.remove('shuffling');
-            toggleBtns('init'); ui.select.disabled = false;
-            if(full) { state.topic = ''; updateTopicUI(); guide("スプレッド（並べ方）を選んでください。"); }
-            else { guide("準備ができたらシャッフルしてください。"); }
+        function handleLogout() {
+            if(confirm("ログアウトしますか？")) {
+                isLoggedIn = false;
+                updateLoginStateUI();
+                currentSpread = 'one_oracle';
+                lastValidSpread = 'one_oracle';
+                uiSpreadSelect.value = 'one_oracle';
+                currentTopic = ""; 
+                resetGame(true);
+            }
+        }
+
+        function updateLoginStateUI() {
+            const btn = document.getElementById('btn-login-header');
+            const opts = uiSpreadSelect.options;
+
+            if(isLoggedIn) {
+                btn.innerText = "ログアウト";
+                for(let i=0; i<opts.length; i++) {
+                    opts[i].text = opts[i].text.replace("🔒 ", "");
+                }
+            } else {
+                btn.innerText = "ログイン";
+                 for(let i=0; i<opts.length; i++) {
+                    const val = opts[i].value;
+                    const conf = SPREAD_CONFIGS[val];
+                    if (conf && conf.loginReq && !opts[i].text.includes("🔒")) {
+                        opts[i].text = "🔒 " + opts[i].text;
+                    }
+                }
+            }
+        }
+
+        function handleTopicSubmit() {
+            currentTopic = uiTopicInput.value.trim();
+            hideModal(uiTopicModal);
+            updateTopicUI();
+            setStatus(`テーマ: 「${currentTopic}」 シャッフルを開始してください。`);
+        }
+
+        function updateTopicUI() {
+            if(currentTopic) {
+                uiTopicDisplay.classList.remove('hidden');
+                uiTopicText.innerText = currentTopic;
+            } else {
+                uiTopicDisplay.classList.add('hidden');
+            }
         }
 
         function startShuffle() {
-            if(state.phase !== 'IDLE' && state.phase !== 'FINISHED') return;
-            if(state.user && !state.topic) { document.getElementById('topic-input').value = ""; show(ui.modalTopic); return; }
-            state.phase = 'SHUFFLING'; ui.deckStack.classList.add('shuffling'); populateDeck();
-            ui.spread.innerHTML = ''; state.drawn = []; toggleBtns('shuffling'); ui.select.disabled = true;
-            guide("山札をタップしてカードを引いてください。");
+            if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
+            
+            if(isLoggedIn && currentState === 'IDLE' && !currentTopic) {
+                if(uiTopicInput) uiTopicInput.value = "";
+                showModal(uiTopicModal);
+                return;
+            }
+
+            currentState = 'SHUFFLING';
+            uiDeckStack.classList.add('shuffling'); 
+            uiBtnShuffle.disabled = true;
+            uiSpreadSelect.disabled = true;
+            
+            uiSpreadLayer.innerHTML = '';
+            drawnCards = [];
+            pickCount = 0;
+            
+            setStatus("山札をタップしてカードを引いてください！");
         }
 
-        function pickCard() {
-            if(state.phase !== 'SHUFFLING' && state.phase !== 'PICKING') return;
-            const conf = SPREADS[currentSpread];
-            if(state.deck.length === 0) populateDeck();
-            if(state.drawn.length >= conf.count) return;
-            state.phase = 'PICKING'; ui.deckStack.classList.remove('shuffling');
-            
-            const rIdx = Math.floor(Math.random() * state.deck.length);
-            const cid = state.deck.splice(rIdx, 1)[0];
-            const isRev = Math.random() < 0.5;
-            
+        function handleDeckClick() {
+            if (currentState === 'SHUFFLING' || currentState === 'PICKING') {
+                pickOneCard();
+            }
+        }
+
+        function pickOneCard() {
+            const conf = SPREAD_CONFIGS[currentSpread];
+            if (pickCount >= conf.count) return;
+
+            currentState = 'PICKING';
+            uiDeckStack.classList.remove('shuffling');
+
+            if(deck.length === 0) populateDeck();
+            const rIndex = Math.floor(Math.random() * deck.length);
+            const cardId = deck[rIndex];
+            deck.splice(rIndex, 1);
+            const isReversed = Math.random() < 0.5;
+
             const el = document.createElement('div');
             el.className = 'card-scene';
-            el.innerHTML = `<div class="card-obj"><div class="card-face front"><img src="${IMG_PATH}${cid}.jpg" style="transform:${isRev?'rotate(180deg)':''}"></div><div class="card-face back"><img src="${IMG_PATH}${BACK_IMG}"></div></div>`;
-            ui.spread.appendChild(el);
+            el.style.opacity = '1';
             
-            const sRect = ui.spread.getBoundingClientRect();
-            el.style.left = (sRect.width / 2) + 'px'; el.style.top = (sRect.height - 100) + 'px'; el.style.opacity = 1;
+            el.innerHTML = `
+                <div class="card-obj">
+                    <div class="card-face front">
+                        <img src="${IMG_FOLDER}${cardId}${IMG_EXT}" 
+                             style="transform: ${isReversed ? 'rotate(180deg)' : 'none'};"
+                             onerror="this.src='https://placehold.co/100x174/eee/333?text=${cardId}'">
+                    </div>
+                    <div class="card-face back">
+                        <img src="${IMG_FOLDER}${BACK_IMG}" onerror="this.src='https://placehold.co/100x174/333/eee?text=BACK'">
+                    </div>
+                </div>
+            `;
+            uiSpreadLayer.appendChild(el);
+            drawnCards.push({ id: cardId, reversed: isReversed, el: el });
+
+            // Animate
+            const deckRect = uiDeckStack.getBoundingClientRect();
+            const spreadRect = uiSpreadLayer.getBoundingClientRect();
             
-            const pos = conf.pos[state.drawn.length];
-            state.drawn.push({ id:cid, rev:isRev, el:el, pos:pos });
-            
+            const startX = (spreadRect.width / 2) - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w'))/2); 
+            const startY = spreadRect.height - 150; 
+
+            el.style.left = `${startX}px`;
+            el.style.top = `${startY}px`;
+            el.style.opacity = '1';
+
+            const pos = conf.pos[pickCount];
+            const targetX = (spreadRect.width * (pos.x / 100)) - (el.offsetWidth / 2);
+            const targetY = (spreadRect.height * (pos.y / 100)) - (el.offsetHeight / 2);
+
+            el.offsetHeight; 
+
             requestAnimationFrame(() => {
                 el.style.transition = "all 0.5s ease-out";
-                el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
-                if(pos.rot) el.style.transform = `rotate(${pos.rot}deg)`;
+                el.style.left = `${targetX}px`;
+                el.style.top = `${targetY}px`;
+                
+                if(pos.cross) {
+                    el.style.transform = "rotate(90deg)";
+                }
             });
 
-            if(state.drawn.length >= conf.count) {
-                state.phase = 'READY'; ui.deck.classList.add('hidden'); toggleBtns('ready'); guide("揃いました。「開く」を押してください。");
-            } else { setTimeout(() => { if(state.phase === 'PICKING') ui.deckStack.classList.add('shuffling'); }, 400); }
+            pickCount++;
+
+            if (pickCount >= conf.count) {
+                currentState = 'READY';
+                uiBtnOpen.disabled = false;
+                uiBtnOpen.style.opacity = 1;
+                // ★ Hide Deck when done
+                uiDeckStack.classList.add('hidden'); 
+                
+                setStatus("カードが揃いました。「開く」を押してください。");
+            } else {
+                setTimeout(() => {
+                     if(currentState === 'PICKING') uiDeckStack.classList.add('shuffling');
+                }, 500);
+            }
         }
 
-        function openCards() {
-            if(state.phase !== 'READY') return;
-            state.phase = 'OPENING'; toggleBtns('opening'); guide("運命を紐解いています...");
+        function startReveal() {
+            if (currentState !== 'READY') return;
+            currentState = 'OPENING';
+            uiBtnOpen.disabled = true;
+            setStatus("運命を紐解いています...");
+
             let delay = 0;
-            state.drawn.forEach(c => { setTimeout(() => c.el.querySelector('.card-obj').classList.add('is-open'), delay); delay += 800; });
+            drawnCards.forEach((c) => {
+                setTimeout(() => {
+                    const obj = c.el.querySelector('.card-obj');
+                    obj.classList.add('is-open');
+                }, delay);
+                delay += 800;
+            });
+
             setTimeout(() => {
-                state.phase = 'FINISHED'; toggleBtns('finished'); guide("完了。カードは自由に動かせます。");
-                if(state.user) saveResult();
-            }, delay + 600);
+                currentState = 'FINISHED';
+                uiBtnShare.classList.remove('hidden');
+                uiBtnShare.classList.add('flex');
+                uiBtnReset.classList.remove('hidden');
+                uiBtnShuffle.classList.add('hidden');
+                uiBtnOpen.classList.add('hidden');
+                
+                setStatus("リーディング完了。カードを動かして確認できます。");
+
+                if(isLoggedIn) {
+                    sendDataToGAS();
+                }
+            }, delay + 500);
         }
 
-        function saveResult() {
-            if(!state.user) return;
+        function resetGame(fullReset = false) {
+            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
+            if (fullReset) {
+                currentTopic = ""; 
+                updateTopicUI();
+            }
+
+            // If logged in and topic missing, prompt
+            if(isLoggedIn && !currentTopic && fullReset) {
+                if(uiTopicInput) uiTopicInput.value = "";
+                showModal(uiTopicModal);
+            }
+
+            uiSpreadLayer.innerHTML = '';
+            drawnCards = [];
+            currentState = 'IDLE';
+            populateDeck();
+            
+            pickCount = 0; 
+
+            uiBtnShuffle.disabled = false;
+            uiBtnShuffle.classList.remove('hidden');
+            
+            uiBtnOpen.disabled = true;
+            uiBtnOpen.classList.remove('hidden');
+            uiBtnOpen.style.opacity = 0.5;
+
+            uiBtnReset.classList.add('hidden');
+            
+            uiBtnShare.classList.add('hidden');
+            uiBtnShare.classList.remove('flex');
+
+            uiSpreadSelect.disabled = false;
+            uiDeckStack.classList.remove('hidden');
+            uiDeckStack.classList.remove('shuffling');
+            
+            if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
+            else if(!currentTopic) setStatus("テーマを設定して占いを開始します。");
+            else setStatus("シャッフルを開始してください。");
+        }
+
+        // --- Drag Implementation ---
+        function handleDragStart(e) {
+            if (currentState !== 'FINISHED') return;
+            // Mouse left click only
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            // Find valid card target
+            const targetEl = e.target.closest('.card-scene');
+            if (!targetEl) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+
+            isDragging = true;
+            currentDragCard = targetEl;
+
+            currentDragCard.style.zIndex = 100;
+            currentDragCard.style.transition = 'none';
+
+            initialLeft = parseFloat(currentDragCard.style.left) || 0;
+            initialTop = parseFloat(currentDragCard.style.top) || 0;
+
+            startX = evt.clientX;
+            startY = evt.clientY;
+            
+            if (e.type === 'touchstart') {
+                e.preventDefault(); 
+            }
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !currentDragCard) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+            const dx = evt.clientX - startX;
+            const dy = evt.clientY - startY;
+
+            currentDragCard.style.left = `${initialLeft + dx}px`;
+            currentDragCard.style.top = `${initialTop + dy}px`;
+            
+            if(e.cancelable) e.preventDefault();
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            if(currentDragCard) {
+                currentDragCard.style.zIndex = 50;
+            }
+            isDragging = false;
+            currentDragCard = null;
+        }
+
+        // --- Utils ---
+
+        function showModal(el) {
+            el.classList.add('active');
+        }
+        function hideModal(el) {
+            el.classList.remove('active');
+        }
+        
+        function showToast(msg, type='info') {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = msg;
+            if(type==='success') t.style.borderLeftColor = 'lightgreen';
+            uiToastContainer.appendChild(t);
+            setTimeout(() => {
+                t.style.opacity = 0;
+                setTimeout(()=>t.remove(), 300);
+            }, 3000);
+        }
+
+        async function handleNativeShare() {
+            const url = "https://tarot.design4qol.com/";
+            const text = `🔮 今日の運命 (The Daily Oracle)\nTheme: ${currentTopic || 'My Destiny'}`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'The Daily Oracle',
+                        text: text,
+                        url: url
+                    });
+                } catch (err) {
+                    // Share cancelled
+                }
+            } else {
+                if(navigator.clipboard) {
+                    navigator.clipboard.writeText(`${text} ${url}`);
+                    showToast("リンクをクリップボードにコピーしました！");
+                } else {
+                    showToast("このデバイスでは共有機能が使えません。");
+                }
+            }
+        }
+
+        function sendDataToGAS() {
+            if(!API_ENDPOINT) return;
+            
+            showToast("運営へ送信完了。解説をお待ちください。", "success");
+
+            const payload = {
+                type: 'save',
+                date: new Date().toISOString(),
+                theme: currentTopic,
+                spread: currentSpread,
+                cards: drawnCards.map(c => ({ id: c.id, reversed: c.reversed }))
+            };
+
             fetch(API_ENDPOINT, {
-                method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                    type: 'save', date: new Date().toISOString(), username: state.user.name,
-                    email: state.user.email, theme: state.topic, spread: currentSpread, cards: state.drawn.map(c => ({ id: c.id, reversed: c.rev }))
-                })
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                // Already toasted
+            }).catch(e => {
+                console.error(e);
             });
         }
-
-        // --- Helpers ---
-        function repositionCards() { state.drawn.forEach(item => { item.el.style.transition = "none"; item.el.style.left = item.pos.x + '%'; item.el.style.top = item.pos.y + '%'; }); }
-        function updateTopicUI() { const el = document.getElementById('topic-display'); const txt = document.getElementById('topic-text-content'); if(state.topic) { el.classList.remove('hidden'); txt.innerText = state.topic; } else { el.classList.add('hidden'); } }
-        function toggleBtns(phase) {
-            ui.btnShuffle.classList.add('hidden'); ui.btnShuffle.disabled = true; ui.btnOpen.classList.add('hidden'); ui.btnReset.classList.add('hidden'); ui.btnShare.classList.add('hidden');
-            if(phase === 'init') { ui.btnShuffle.classList.remove('hidden'); ui.btnShuffle.disabled = false; }
-            if(phase === 'shuffling') { ui.btnShuffle.classList.remove('hidden'); }
-            if(phase === 'ready') { ui.btnOpen.classList.remove('hidden'); ui.btnOpen.disabled = false; }
-            if(phase === 'finished') { ui.btnReset.classList.remove('hidden'); ui.btnShare.classList.remove('hidden'); ui.btnShare.classList.add('flex'); }
-        }
-        function guide(msg) { ui.guideTxt.innerText = msg; ui.guideTxt.classList.add('show'); }
-        function show(el) { el.classList.add('active'); }
-        function hide(el) { el.classList.remove('active'); }
-        function showToast(m,t) { const d=document.createElement('div'); d.className='toast'; d.innerText=m; if(t==='success') d.style.borderLeft='4px solid #4caf50'; document.getElementById('toast-container').appendChild(d); setTimeout(()=>d.remove(),3000); }
-        async function shareResult() { const txt = `🔮 The Daily Oracle\nResult: ${currentSpread}\nTheme: ${state.topic||'none'}`; try { await navigator.share({title:'Oracle', text:txt, url:'https://tarot.design4qol.com/'}); } catch(e) { navigator.clipboard.writeText(txt); showToast("URLをコピーしました"); } }
         
-        let drag = null, dx=0, dy=0;
-        function dragStart(e) { if(state.phase !== 'FINISHED') return; const t = e.target.closest('.card-scene'); if(!t) return; const evt = e.touches ? e.touches[0] : e; drag = t; drag.style.zIndex = 100; drag.style.transition = 'none'; const rect = drag.getBoundingClientRect(); dx = evt.clientX - rect.left; dy = evt.clientY - rect.top; if(e.type==='touchstart') e.preventDefault(); }
-        function dragMove(e) { if(!drag) return; const evt = e.touches ? e.touches[0] : e; const parent = ui.spread.getBoundingClientRect(); let x = evt.clientX - parent.left - dx + (drag.offsetWidth/2); let y = evt.clientY - parent.top - dy + (drag.offsetHeight/2); drag.style.left = x + 'px'; drag.style.top = y + 'px'; if(e.cancelable) e.preventDefault(); }
-        function dragEnd() { if(drag) { drag.style.zIndex = 10; drag = null; } }
+        function setStatus(msg) {
+            if(uiGuideBubble) {
+                uiGuideBubble.classList.remove('bubble-pop');
+                void uiGuideBubble.offsetWidth; 
+                uiGuideBubble.classList.add('bubble-pop');
+            }
+            if(uiGuideText) {
+                uiGuideText.textContent = '';
+                clearInterval(typeInterval);
+                
+                let i = 0;
+                typeInterval = setInterval(() => {
+                    uiGuideText.textContent += msg.charAt(i);
+                    i++;
+                    if (i >= msg.length) {
+                        clearInterval(typeInterval);
+                    }
+                }, 50); 
+            }
+        }
 
         init();
+
     </script>
 </body>
 </html>

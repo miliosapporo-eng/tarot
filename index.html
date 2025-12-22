@@ -166,7 +166,8 @@
             min-width: 100%;
             min-height: 100%;
             pointer-events: none;
-            z-index: 20;
+            /* ★修正: デッキ(z=30)より上に表示するため z=40 に変更 */
+            z-index: 40;
         }
 
         /* Deck */
@@ -567,20 +568,26 @@
             
             <div class="overflow-y-auto pr-2 flex-grow space-y-6 pb-4">
                 
-                <!-- 0. 正位置・逆位置について -->
+                <!-- 0. 正位置・逆位置・横位置について -->
                 <section class="border-b border-gray-400 pb-4">
-                    <h3 class="font-bold text-base mb-2 font-serif"><i class="fa-solid fa-rotate mr-2"></i>カードの向き（正位置・逆位置）</h3>
+                    <h3 class="font-bold text-base mb-2 font-serif"><i class="fa-solid fa-rotate mr-2"></i>カードの向き</h3>
                     <p class="text-xs mb-3">タロットは、カードが出る向き（上下）によって意味が変わります。</p>
-                    <div class="flex justify-around items-start gap-4 bg-gray-100 p-3 rounded">
+                    <div class="flex justify-around items-start gap-2 bg-gray-100 p-3 rounded">
                         <div class="text-center flex-1">
-                            <img src="images/0.jpg" alt="正位置" class="w-16 h-auto mx-auto mb-2 rounded shadow-sm border border-gray-400 bg-gray-300" onerror="this.src='https://placehold.co/64x106?text=正';">
-                            <h4 class="font-bold text-xs mb-1">正位置 (Upright)</h4>
-                            <p class="text-[10px] leading-tight text-left">カード本来の意味がストレートに表れます。エネルギーが正しく発揮されている状態。</p>
+                            <img src="images/0.jpg" alt="正位置" class="w-10 md:w-14 h-auto mx-auto mb-2 rounded shadow-sm border border-gray-400 bg-gray-300" onerror="this.src='https://placehold.co/64x106?text=正';">
+                            <h4 class="font-bold text-[10px] md:text-xs mb-1">正位置</h4>
+                            <p class="text-[9px] leading-tight text-left">エネルギーが正しく発揮されている状態。</p>
                         </div>
                         <div class="text-center flex-1">
-                            <img src="images/0.jpg" alt="逆位置" class="w-16 h-auto mx-auto mb-2 rounded shadow-sm border border-gray-400 bg-gray-300" style="transform: rotate(180deg);" onerror="this.src='https://placehold.co/64x106?text=逆';">
-                            <h4 class="font-bold text-xs mb-1">逆位置 (Reversed)</h4>
-                            <p class="text-[10px] leading-tight text-left">本来の意味が過剰、不足、または歪んで表れます。注意が必要な状態や、ブロックがある状態。</p>
+                            <img src="images/0.jpg" alt="逆位置" class="w-10 md:w-14 h-auto mx-auto mb-2 rounded shadow-sm border border-gray-400 bg-gray-300" style="transform: rotate(180deg);" onerror="this.src='https://placehold.co/64x106?text=逆';">
+                            <h4 class="font-bold text-[10px] md:text-xs mb-1">逆位置</h4>
+                            <p class="text-[9px] leading-tight text-left">意味が過剰、不足、または歪んで表れます。</p>
+                        </div>
+                        <!-- ★ 横位置 追加 -->
+                        <div class="text-center flex-1">
+                            <img src="images/0.jpg" alt="横位置" class="w-10 md:w-14 h-auto mx-auto mb-2 rounded shadow-sm border border-gray-400 bg-gray-300" style="transform: rotate(90deg);" onerror="this.src='https://placehold.co/64x106?text=横';">
+                            <h4 class="font-bold text-[10px] md:text-xs mb-1">横位置</h4>
+                            <p class="text-[9px] leading-tight text-left">障害や影響を与える要因、または保留の状態を表します。</p>
                         </div>
                     </div>
                 </section>
@@ -844,10 +851,10 @@
                 <div class="flex flex-col md:flex-row gap-4 border-b border-black/20 pb-6">
                     <img src="images/9.jpg" class="w-24 md:w-32 rounded shadow-md object-cover border border-black mx-auto md:mx-0 bg-gray-300" onerror="this.src='https://placehold.co/100x170?text=9';">
                     <div class="text-left flex-1">
-                        <h3 class="font-bold text-lg mb-2 font-serif">IX. 太陽 (The Sun)</h3>
-                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 成功、喜び、活力、無邪気さ、エネルギー。</p>
-                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「空き地の野球大会」</p>
-                        <p class="text-xs text-gray-700 leading-relaxed">ホームランを打って歓声を上げる子供たち。入道雲とニコニコ笑う太陽。爆発的なエネルギーと喜び。</p>
+                        <h3 class="font-bold text-lg mb-2 font-serif">IX. 隠者 (The Hermit)</h3>
+                        <p class="text-sm mb-1"><strong>伝統的な意味:</strong> 内省、探求、孤独、指導者、真理を求める。</p>
+                        <p class="text-sm mb-1"><strong>デザイン:</strong> 「深夜の受験勉強」</p>
+                        <p class="text-xs text-gray-700 leading-relaxed">深夜、小さな明かりの下で参考書と格闘する浪人生。孤独な戦いと内省の時間。</p>
                     </div>
                 </div>
 
@@ -1273,6 +1280,7 @@
             // Create Card Element
             const el = document.createElement('div');
             el.className = 'card-scene';
+            el.style.opacity = '1'; // Ensure visibility
             el.innerHTML = `
                 <div class="card-obj">
                     <div class="card-face front">

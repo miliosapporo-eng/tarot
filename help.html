@@ -1,1 +1,371 @@
-s
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ショウワレトロット - 解説</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Shippori+Mincho:wght@400;700&display=swap');
+
+        :root {
+            --paper-bg: #f4e4bc;
+            --ink-black: #2c2c2c;
+            --ink-red: #8b0000;
+        }
+
+        body {
+            background-color: var(--paper-bg);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E");
+            color: var(--ink-black);
+            font-family: 'Shippori Mincho', serif;
+            line-height: 1.6;
+        }
+
+        .headline { font-family: 'Playfair Display', serif; letter-spacing: -0.02em; }
+        
+        .paper-card {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--ink-black);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            border-bottom: 2px solid var(--ink-black);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--ink-black);
+            color: var(--paper-bg);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 100;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .back-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Card Image Styling */
+        .tarot-img {
+            width: 80px;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #333;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            background-color: #ddd; /* Placeholder color */
+        }
+    </style>
+</head>
+<body class="p-4 pb-20">
+
+    <div class="max-w-2xl mx-auto">
+        <header class="text-center mb-8">
+            <img src="images/title.png" alt="The Daily Oracle" class="h-16 mx-auto object-contain mb-2 drop-shadow-sm">
+            <h1 class="headline text-2xl font-bold">占い解説ガイド</h1>
+        </header>
+
+        <!-- カードの向き -->
+        <div class="paper-card">
+            <h2 class="section-title"><i class="fa-solid fa-rotate"></i> カードの向きについて</h2>
+            <p class="text-sm mb-4">タロットは、カードが出る向き（上下）によって意味が変わります。</p>
+            <div class="grid grid-cols-3 gap-4 text-center text-xs md:text-sm">
+                <div class="flex flex-col items-center">
+                    <img src="images/0.jpg" class="tarot-img mb-2" alt="正位置" onerror="this.src='https://placehold.co/80x137?text=正';">
+                    <strong>正位置</strong><br><span class="text-xs">本来のエネルギーが発揮されている状態。</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="images/0.jpg" class="tarot-img mb-2" alt="逆位置" style="transform: rotate(180deg);" onerror="this.src='https://placehold.co/80x137?text=逆';">
+                    <strong>逆位置</strong><br><span class="text-xs">意味が過剰、不足、または歪んで表れる状態。</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="images/0.jpg" class="tarot-img mb-2" alt="横位置" style="transform: rotate(90deg);" onerror="this.src='https://placehold.co/80x137?text=横';">
+                    <strong>横位置</strong><br><span class="text-xs">障害、要因、または保留の状態。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- スプレッド -->
+        <div class="paper-card">
+            <h2 class="section-title"><i class="fa-solid fa-layer-group"></i> 並べ方（スプレッド）</h2>
+            <ul class="space-y-4 text-sm">
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">ワンオラクル (1枚)</strong>
+                    最もシンプル。今日の運勢やYES/NOの質問に。
+                </li>
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">ツーオラクル (2枚)</strong>
+                    [結果] と [対策]。問題の原因と解決策を探ります。
+                </li>
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">ツーマインド (2枚)</strong>
+                    [顕在意識(建前)] と [潜在意識(本音)]。自分の心を知りたい時に。
+                </li>
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">シンプルクロス (2枚)</strong>
+                    [現状] と [障害]。何が道を阻んでいるのかを明確にします。
+                </li>
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">スリーカード (3枚)</strong>
+                    [過去] → [現在] → [未来]。時間の流れを読み解きます。
+                </li>
+                <li>
+                    <strong class="text-lg font-serif block border-b border-dashed border-gray-400 mb-1">フォーカード (4枚)</strong>
+                    [現状] [障害] [対策] [結果]。問題解決のための具体的なステップ。
+                </li>
+            </ul>
+        </div>
+
+        <!-- 大アルカナ -->
+        <div class="paper-card">
+            <h2 class="section-title"><i class="fa-solid fa-clover"></i> 大アルカナの意味</h2>
+            <div class="space-y-6">
+                
+                <!-- 0 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/0.jpg" class="tarot-img" alt="0. 愚者">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">0. 愚者 (The Fool)</h3>
+                        <p class="text-sm">始まり、自由、無邪気、冒険。計画性がなくとも飛び出すエネルギー。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: おっちょこちょいな買い物</p>
+                    </div>
+                </div>
+
+                <!-- 1 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/1.jpg" class="tarot-img" alt="1. 魔術師">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">I. 魔術師 (The Magician)</h3>
+                        <p class="text-sm">創造、技術、自信。道具を使いこなし、無から有を生み出す力。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 日曜大工のお父さん</p>
+                    </div>
+                </div>
+
+                <!-- 2 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/2.jpg" class="tarot-img" alt="2. 女教皇">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">II. 女教皇 (The High Priestess)</h3>
+                        <p class="text-sm">知恵、静寂、直感。静かなる母の知恵。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 静かなる母の知恵</p>
+                    </div>
+                </div>
+
+                <!-- 3 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/3.jpg" class="tarot-img" alt="3. 女帝">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">III. 女帝 (The Empress)</h3>
+                        <p class="text-sm">豊穣、母性、繁栄。若奥様の奮闘と幸せ。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 若奥様の奮闘と幸せ</p>
+                    </div>
+                </div>
+
+                <!-- 4 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/4.jpg" class="tarot-img" alt="4. 皇帝">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">IV. 皇帝 (The Emperor)</h3>
+                        <p class="text-sm">父性、権威、安定。高度経済成長の戦士。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 高度経済成長の戦士</p>
+                    </div>
+                </div>
+
+                <!-- 5 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/5.jpg" class="tarot-img" alt="5. 教皇">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">V. 教皇 (The Hierophant)</h3>
+                        <p class="text-sm">伝統、教え、助言。先生の書斎。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 先生の書斎</p>
+                    </div>
+                </div>
+
+                <!-- 6 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/6.jpg" class="tarot-img" alt="6. 恋人たち">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">VI. 恋人たち (The Lovers)</h3>
+                        <p class="text-sm">愛、調和、選択。運命のお見合い。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 運命のお見合い</p>
+                    </div>
+                </div>
+
+                <!-- 7 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/7.jpg" class="tarot-img" alt="7. 戦車">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">VII. 戦車 (The Chariot)</h3>
+                        <p class="text-sm">勝利、前進、意志。御用聞きはつらいよ。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 御用聞きはつらいよ</p>
+                    </div>
+                </div>
+
+                <!-- 8 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/8.jpg" class="tarot-img" alt="8. 力">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">VIII. 力 (Strength)</h3>
+                        <p class="text-sm">忍耐、優しさ、勇気。優しさは強さ。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 優しさは強さ</p>
+                    </div>
+                </div>
+
+                <!-- 9 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/9.jpg" class="tarot-img" alt="9. 隠者">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">IX. 隠者 (The Hermit)</h3>
+                        <p class="text-sm">内省、探求、真理。深夜の受験勉強。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 深夜の受験勉強</p>
+                    </div>
+                </div>
+
+                <!-- 10 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/10.jpg" class="tarot-img" alt="10. 運命の輪">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">X. 運命の輪 (Wheel of Fortune)</h3>
+                        <p class="text-sm">チャンス、変化、サイクル。家族団らんのちゃぶ台。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 家族団らんのちゃぶ台</p>
+                    </div>
+                </div>
+
+                <!-- 11 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/11.jpg" class="tarot-img" alt="11. 正義">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XI. 正義 (Justice)</h3>
+                        <p class="text-sm">公平、均衡、正しさ。町の平和を守る人。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 町の平和を守る人</p>
+                    </div>
+                </div>
+
+                <!-- 12 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/12.jpg" class="tarot-img" alt="12. 吊るされた男">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XII. 吊るされた男 (The Hanged Man)</h3>
+                        <p class="text-sm">試練、忍耐、自己犠牲。サラリーマンの受難。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: サラリーマンの受難</p>
+                    </div>
+                </div>
+
+                <!-- 13 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/13.jpg" class="tarot-img" alt="13. 死神">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XIII. 死神 (Death)</h3>
+                        <p class="text-sm">終焉、変化、再スタート。いたずらバレて大目玉。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: いたずら、バレる（大目玉）</p>
+                    </div>
+                </div>
+
+                <!-- 14 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/14.jpg" class="tarot-img" alt="14. 節制">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XIV. 節制 (Temperance)</h3>
+                        <p class="text-sm">調整、バランス、中庸。噂話のバランス調整。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 噂話のバランス調整</p>
+                    </div>
+                </div>
+
+                <!-- 15 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/15.jpg" class="tarot-img" alt="15. 悪魔">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XV. 悪魔 (The Devil)</h3>
+                        <p class="text-sm">誘惑、欲望、束縛。つまみ食いの誘惑。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: つまみ食いの誘惑</p>
+                    </div>
+                </div>
+
+                <!-- 16 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/16.jpg" class="tarot-img" alt="16. 塔">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XVI. 塔 (The Tower)</h3>
+                        <p class="text-sm">崩壊、ハプニング、啓示。ドタバタ大惨事。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: ドタバタ大惨事</p>
+                    </div>
+                </div>
+
+                <!-- 17 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/17.jpg" class="tarot-img" alt="17. 星">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XVII. 星 (The Star)</h3>
+                        <p class="text-sm">希望、癒し、純粋。見上げてごらん夜の星を。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 見上げてごらん夜の星を</p>
+                    </div>
+                </div>
+
+                <!-- 18 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/18.jpg" class="tarot-img" alt="18. 月">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XVIII. 月 (The Moon)</h3>
+                        <p class="text-sm">不安、幻想、曖昧。夜の町の怪しい影。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 夜の町の怪しい影</p>
+                    </div>
+                </div>
+
+                <!-- 19 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/19.jpg" class="tarot-img" alt="19. 太陽">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XIX. 太陽 (The Sun)</h3>
+                        <p class="text-sm">成功、喜び、活力。空き地の野球大会。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 空き地の野球大会</p>
+                    </div>
+                </div>
+
+                <!-- 20 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/20.jpg" class="tarot-img" alt="20. 審判">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XX. 審判 (Judgement)</h3>
+                        <p class="text-sm">復活、覚醒、結果。朝の目覚めとラッパの音。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 朝の目覚めとラッパの音</p>
+                    </div>
+                </div>
+
+                <!-- 21 -->
+                <div class="flex flex-col md:flex-row gap-4 items-center md:items-start border-b border-black/10 pb-4">
+                    <img src="images/21.jpg" class="tarot-img" alt="21. 世界">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg font-serif">XXI. 世界 (The World)</h3>
+                        <p class="text-sm">完成、達成、ハッピーエンド。日曜日の夕方。</p>
+                        <p class="text-xs text-gray-600 mt-1">デザイン: 日曜日の夕方</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-8 mb-12">
+            <a href="index.html" class="inline-block border-2 border-black px-6 py-2 hover:bg-black hover:text-[#f4e4bc] transition-colors font-bold">アプリに戻る</a>
+        </div>
+    </div>
+
+    <a href="index.html" class="back-btn shadow-lg">
+        <i class="fa-solid fa-arrow-left mr-1"></i> 戻る
+    </a>
+
+</body>
+</html>

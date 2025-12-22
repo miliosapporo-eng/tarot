@@ -166,8 +166,7 @@
             min-width: 100%;
             min-height: 100%;
             pointer-events: none;
-            /* ★修正: デッキ(z=30)より上に表示するため z=40 に変更 */
-            z-index: 40;
+            z-index: 20;
         }
 
         /* Deck */
@@ -502,6 +501,7 @@
                 こちらは Save Point サービス利用者向けです。<br>
             </p>
             
+            <!-- ID Input -->
             <input type="text" id="login-id" class="paper-input" placeholder="ID (メールアドレス)">
             <input type="password" id="login-pass" class="paper-input" placeholder="Password">
             
@@ -1035,6 +1035,11 @@
         let currentTopic = "";
         let lastValidSpread = 'one_oracle';
         let typeInterval;
+        let isDragging = false;
+        let currentDragCard = null;
+        let startX, startY, initialLeft, initialTop;
+        
+        let loginUser = { name: '', email: '' };
 
         // --- DOM Elements ---
         const uiSpreadSelect = document.getElementById('spread-select');
@@ -1155,6 +1160,17 @@
             uiBtnReset.addEventListener('click', resetGame);
             uiBtnShare.addEventListener('click', handleNativeShare);
             
+            // Drag Events
+            document.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('touchstart', handleDragStart, {passive: false});
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('touchmove', handleDragMove, {passive: false});
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchend', handleDragEnd);
+            
+            // Resize Event
+            window.addEventListener('resize', handleResize);
+
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
@@ -1307,6 +1323,7 @@
 
             el.style.left = `${startX}px`;
             el.style.top = `${startY}px`;
+            el.style.opacity = '1';
 
             // Target position
             const pos = conf.pos[pickCount];
@@ -1413,6 +1430,57 @@
             uiDeckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
         }
 
+        // --- Drag Implementation ---
+        function handleDragStart(e) {
+            if (currentState !== 'FINISHED') return;
+            // Mouse left click only
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            // Find valid card target
+            const targetEl = e.target.closest('.card-scene');
+            if (!targetEl) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+
+            isDragging = true;
+            currentDragCard = targetEl;
+
+            currentDragCard.style.zIndex = 100;
+            currentDragCard.style.transition = 'none';
+
+            initialLeft = parseFloat(currentDragCard.style.left) || 0;
+            initialTop = parseFloat(currentDragCard.style.top) || 0;
+
+            startX = evt.clientX;
+            startY = evt.clientY;
+            
+            if (e.type === 'touchstart') {
+                e.preventDefault(); 
+            }
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !currentDragCard) return;
+
+            const evt = e.type.includes('mouse') ? e : e.touches[0];
+            const dx = evt.clientX - startX;
+            const dy = evt.clientY - startY;
+
+            currentDragCard.style.left = `${initialLeft + dx}px`;
+            currentDragCard.style.top = `${initialTop + dy}px`;
+            
+            if(e.cancelable) e.preventDefault();
+        }
+
+        function handleDragEnd(e) {
+            if (!isDragging) return;
+            if(currentDragCard) {
+                currentDragCard.style.zIndex = 50;
+            }
+            isDragging = false;
+            currentDragCard = null;
+        }
+
         // --- Utils ---
 
         function showModal(el) {
@@ -1473,6 +1541,7 @@
             showToast("結果を保存しています...", "info");
 
             const payload = {
+                type: 'save',
                 date: new Date().toISOString(),
                 theme: currentTopic,
                 spread: currentSpread,

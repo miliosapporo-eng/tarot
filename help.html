@@ -84,18 +84,37 @@
         <div class="paper-card">
             <h2 class="section-title"><i class="fa-solid fa-rotate"></i> カードの向きについて</h2>
             <p class="text-sm mb-4">タロットは、カードが出る向き（上下）によって意味が変わります。</p>
-            <div class="grid grid-cols-3 gap-4 text-center text-xs md:text-sm">
+            
+            <!-- 縦位置 -->
+            <h3 class="font-bold text-sm mb-2 border-l-4 border-red-800 pl-2">縦に配置された場合</h3>
+            <div class="grid grid-cols-2 gap-4 text-center text-xs md:text-sm mb-6">
                 <div class="flex flex-col items-center">
                     <img src="images/0.jpg" class="tarot-img mb-2" alt="正位置" onerror="this.src='https://placehold.co/80x137?text=正';">
-                    <strong>正位置</strong><br><span class="text-xs">本来のエネルギーが発揮されている状態。</span>
+                    <strong>正位置 (Upright)</strong><br>
+                    <span class="text-xs text-gray-700">本来のエネルギーが発揮されている状態。<br>肯定的、ストレートな意味。</span>
                 </div>
                 <div class="flex flex-col items-center">
                     <img src="images/0.jpg" class="tarot-img mb-2" alt="逆位置" style="transform: rotate(180deg);" onerror="this.src='https://placehold.co/80x137?text=逆';">
-                    <strong>逆位置</strong><br><span class="text-xs">意味が過剰、不足、または歪んで表れる状態。</span>
+                    <strong>逆位置 (Reversed)</strong><br>
+                    <span class="text-xs text-gray-700">意味が過剰、不足、または歪んで表れる状態。<br>注意や見直しが必要。</span>
+                </div>
+            </div>
+
+            <!-- 横位置 -->
+            <h3 class="font-bold text-sm mb-2 border-l-4 border-red-800 pl-2">横に配置された場合（障害・対策など）</h3>
+            <p class="text-xs mb-3 text-gray-700">「シンプルクロス」などでカードが横向きに置かれる場合は、カードの頭（上）がどちらを向いているかで正逆を判断します。</p>
+            <div class="grid grid-cols-2 gap-4 text-center text-xs md:text-sm">
+                <div class="flex flex-col items-center">
+                    <!-- 左が頭 -->
+                    <img src="images/0.jpg" class="tarot-img mb-2" alt="横位置（正）" style="transform: rotate(-90deg);" onerror="this.src='https://placehold.co/80x137?text=横(正)';">
+                    <strong>頭が左 ＝ 正位置</strong><br>
+                    <span class="text-xs text-gray-700">正位置と同じように読み解きます。<br>（エネルギーがスムーズに流れる）</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <img src="images/0.jpg" class="tarot-img mb-2" alt="横位置" style="transform: rotate(90deg);" onerror="this.src='https://placehold.co/80x137?text=横';">
-                    <strong>横位置</strong><br><span class="text-xs">障害、要因、または保留の状態。</span>
+                    <!-- 右が頭 -->
+                    <img src="images/0.jpg" class="tarot-img mb-2" alt="横位置（逆）" style="transform: rotate(90deg);" onerror="this.src='https://placehold.co/80x137?text=横(逆)';">
+                    <strong>頭が右 ＝ 逆位置</strong><br>
+                    <span class="text-xs text-gray-700">逆位置と同じように読み解きます。<br>（流れが滞る、過剰になる）</span>
                 </div>
             </div>
         </div>
@@ -311,7 +330,7 @@
                     <img src="images/17.jpg" class="tarot-img" alt="17. 星">
                     <div class="flex-1">
                         <h3 class="font-bold text-lg font-serif">XVII. 星 (The Star)</h3>
-                        <p class="text-sm">希望、癒し、純粋。見上げてごらん夜の星を。</p>
+                        <p class="text-sm">希望、インスピレーション、癒し、純粋さ。</p>
                         <p class="text-xs text-gray-600 mt-1">デザイン: 見上げてごらん夜の星を</p>
                     </div>
                 </div>
@@ -321,7 +340,7 @@
                     <img src="images/18.jpg" class="tarot-img" alt="18. 月">
                     <div class="flex-1">
                         <h3 class="font-bold text-lg font-serif">XVIII. 月 (The Moon)</h3>
-                        <p class="text-sm">不安、幻想、曖昧。夜の町の怪しい影。</p>
+                        <p class="text-sm">不安、幻想、曖昧、夜の世界。</p>
                         <p class="text-xs text-gray-600 mt-1">デザイン: 夜の町の怪しい影</p>
                     </div>
                 </div>
@@ -331,7 +350,7 @@
                     <img src="images/19.jpg" class="tarot-img" alt="19. 太陽">
                     <div class="flex-1">
                         <h3 class="font-bold text-lg font-serif">XIX. 太陽 (The Sun)</h3>
-                        <p class="text-sm">成功、喜び、活力。空き地の野球大会。</p>
+                        <p class="text-sm">成功、喜び、活力、無邪気さ。</p>
                         <p class="text-xs text-gray-600 mt-1">デザイン: 空き地の野球大会</p>
                     </div>
                 </div>
@@ -341,7 +360,7 @@
                     <img src="images/20.jpg" class="tarot-img" alt="20. 審判">
                     <div class="flex-1">
                         <h3 class="font-bold text-lg font-serif">XX. 審判 (Judgement)</h3>
-                        <p class="text-sm">復活、覚醒、結果。朝の目覚めとラッパの音。</p>
+                        <p class="text-sm">復活、覚醒、結果、新しい段階。</p>
                         <p class="text-xs text-gray-600 mt-1">デザイン: 朝の目覚めとラッパの音</p>
                     </div>
                 </div>
@@ -351,7 +370,7 @@
                     <img src="images/21.jpg" class="tarot-img" alt="21. 世界">
                     <div class="flex-1">
                         <h3 class="font-bold text-lg font-serif">XXI. 世界 (The World)</h3>
-                        <p class="text-sm">完成、達成、ハッピーエンド。日曜日の夕方。</p>
+                        <p class="text-sm">完成、達成、ハッピーエンド。</p>
                         <p class="text-xs text-gray-600 mt-1">デザイン: 日曜日の夕方</p>
                     </div>
                 </div>

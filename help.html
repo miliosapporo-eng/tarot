@@ -50,10 +50,9 @@
                 transform: translateX(-50%) scale(0.8) !important;
             }
             /* Adjust characters for landscape */
-            #guide-container {
+            #guide-container, #helper-container {
                 transform: scale(0.8);
-                transform-origin: bottom right;
-                bottom: 0 !important;
+                transform-origin: bottom;
             }
         }
 
@@ -248,6 +247,17 @@
         .modal-overlay.active .paper-modal {
             transform: scale(1);
         }
+
+        /* Full Screen Modal for Cards */
+        .paper-modal.full-screen {
+            width: 95%;
+            height: 95%;
+            max-width: 100%;
+            max-height: 95vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
         
         .paper-btn {
             background: var(--ink-black);
@@ -407,7 +417,7 @@
             </div>
         </div>
 
-        <!-- Helper Character REMOVED -->
+        <!-- Helper REMOVED -->
 
     </main>
 
@@ -522,8 +532,8 @@
         const BACK_IMG = 'back.jpg';
         const SEER_IMG = 'seer.png'; 
         
-        // ★ Correct Google Apps Script URL
-        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbzFidZHGCpxVsoJ9tMzjg3oFpZwiPEkyiZR7Pv5O242lRieemSF7vAEihsJbv29NF7t/exec";
+        // ★ Google Apps Script URL
+        const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbyiALNk6Wree4EuKMVcfUct-nkpXP2SGw8aTSww_qa3F_O6-FrMIe0s_gW_sZAxfaph/exec";
 
         const TOTAL_CARDS = 22; 
         const SHUFFLE_CARD_COUNT = 40;
@@ -719,6 +729,7 @@
 
             fetch(API_ENDPOINT, {
                 method: 'POST',
+                // Important: Follow redirects for GAS
                 redirect: 'follow', 
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
@@ -891,7 +902,7 @@
 
             const el = document.createElement('div');
             el.className = 'card-scene';
-            el.style.opacity = '1';
+            el.style.opacity = '1'; 
             el.innerHTML = `
                 <div class="card-obj">
                     <div class="card-face front">
@@ -972,7 +983,7 @@
                 uiBtnShuffle.classList.add('hidden');
                 uiBtnOpen.classList.add('hidden');
                 
-                // ★ Change Seer message here
+                // ★ Add link to help.html
                 const helpLink = '<br><a href="help.html" target="_blank" class="underline text-yellow-300 hover:text-yellow-100">解説(ヘルプ)はこちら</a>';
                 setStatusHtml("リーディング完了。カードを動かして確認できます。" + helpLink);
 
@@ -1029,7 +1040,6 @@
             // Mouse left click only
             if (e.type === 'mousedown' && e.button !== 0) return;
 
-            // Find valid card target
             const targetEl = e.target.closest('.card-scene');
             if (!targetEl) return;
 
@@ -1041,6 +1051,7 @@
             currentDragCard.style.zIndex = 100;
             currentDragCard.style.transition = 'none';
 
+            // Use current style values or bounding rect relative to parent
             initialLeft = parseFloat(currentDragCard.style.left) || 0;
             initialTop = parseFloat(currentDragCard.style.top) || 0;
 
@@ -1068,7 +1079,9 @@
         function handleDragEnd(e) {
             if (!isDragging) return;
             if(currentDragCard) {
-                currentDragCard.style.zIndex = 50;
+                currentDragCard.style.zIndex = 50; 
+                // Restore transition if needed
+                currentDragCard.style.transition = 'width 0.3s, height 0.3s'; 
             }
             isDragging = false;
             currentDragCard = null;

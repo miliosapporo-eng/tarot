@@ -49,6 +49,11 @@
                 bottom: 0.5rem !important;
                 transform: translateX(-50%) scale(0.8) !important;
             }
+            /* Adjust characters for landscape */
+            #guide-container, #helper-container {
+                transform: scale(0.8);
+                transform-origin: bottom;
+            }
         }
 
         body {
@@ -397,6 +402,7 @@
                     <img id="deck-back-3" src="images/back.jpg" alt="" class="w-full h-full object-cover rounded">
                 </div>
             </div>
+            <!-- Removed deck label -->
         </div>
 
         <!-- Guide Character & Bubble -->
@@ -853,11 +859,6 @@
         let currentTopic = "";
         let lastValidSpread = 'one_oracle';
         let typeInterval;
-        let isDragging = false;
-        let currentDragCard = null;
-        let startX, startY, initialLeft, initialTop;
-        
-        let loginUser = { name: '', email: '' };
 
         // --- DOM Elements ---
         const uiSpreadSelect = document.getElementById('spread-select');
@@ -953,61 +954,17 @@
             uiBtnShuffle.addEventListener('click', startShuffle);
             uiDeckStack.addEventListener('click', handleDeckClick);
             uiBtnOpen.addEventListener('click', startReveal);
-            
-            uiBtnReset.addEventListener('click', () => resetGame(true));
-            
+            uiBtnReset.addEventListener('click', resetGame);
             uiBtnShare.addEventListener('click', handleNativeShare);
             
-            // Drag Events
-            document.addEventListener('mousedown', handleDragStart);
-            document.addEventListener('touchstart', handleDragStart, {passive: false});
-            document.addEventListener('mousemove', handleDragMove);
-            document.addEventListener('touchmove', handleDragMove, {passive: false});
-            document.addEventListener('mouseup', handleDragEnd);
-            document.addEventListener('touchend', handleDragEnd);
-            
-            window.addEventListener('resize', handleResize);
-
             setStatus("スプレッド（並べ方）を選んで開始してください。");
         }
 
         // --- Logic ---
-        
-        function handleResize() {
-            if (drawnCards.length > 0 && (currentState === 'PICKING' || currentState === 'READY' || currentState === 'FINISHED')) {
-                setTimeout(repositionCards, 200);
-            }
-        }
-
-        function repositionCards() {
-            const conf = SPREAD_CONFIGS[currentSpread];
-            const spreadRect = uiSpreadLayer.getBoundingClientRect();
-            
-            drawnCards.forEach((item, index) => {
-                const el = item.el;
-                const pos = conf.pos[index];
-                
-                const cardW = el.offsetWidth;
-                const cardH = el.offsetHeight;
-
-                const targetX = (spreadRect.width * (pos.x / 100)) - (cardW / 2);
-                const targetY = (spreadRect.height * (pos.y / 100)) - (cardH / 2);
-                
-                el.style.transition = 'left 0.3s, top 0.3s';
-                el.style.left = `${targetX}px`;
-                el.style.top = `${targetY}px`;
-            });
-        }
-        
-        function setupImages() {
-            if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
-            if(uiHelperImg) uiHelperImg.src = IMG_FOLDER + HELPER_IMG;
-            uiDeckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
-        }
 
         function populateDeck() {
             deck = [];
-            for(let i=0; i<=21; i++) deck.push(i); 
+            for(let i=0; i<=21; i++) deck.push(i); // 0-21 Major Arcana
         }
 
         function handleSpreadChange(e) {
@@ -1016,137 +973,48 @@
             
             if (conf.loginReq && !isLoggedIn) {
                 showModal(uiLoginModal);
-                uiSpreadSelect.value = lastValidSpread;
+                uiSpreadSelect.value = lastValidSpread; // Revert
                 return;
             }
             currentSpread = val;
             lastValidSpread = val;
-            resetGame(false); 
+            resetGame();
         }
 
         function handleLoginSubmit() {
-            const id = uiLoginId.value;
-            const pass = uiLoginPass.value;
-            if(!id || !pass) return;
-
-            uiBtnSubmitLogin.disabled = true;
-            uiBtnSubmitLogin.innerText = "認証中...";
-            uiLoginError.classList.add('hidden');
-
-            const payload = {
-                type: 'auth',
-                id: id,
-                password: pass
-            };
-
-            fetch(API_ENDPOINT, {
-                method: 'POST',
-                redirect: 'follow', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === 'success') {
-                    isLoggedIn = true;
-                    loginUser.name = data.username || "User";
-                    loginUser.email = data.email || id;
-                    hideModal(uiLoginModal);
-                    updateLoginStateUI();
-                    showToast("ログインしました。", "success");
-                    resetGame(false);
-                } else {
-                    const msg = data.message ? `エラー: ${data.message}` : "IDまたはパスワードが違います";
-                    uiLoginError.innerText = msg;
-                    uiLoginError.classList.remove('hidden');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                if(id === "admin" && pass === "secret") {
-                     isLoggedIn = true;
-                     loginUser.name = "Demo User";
-                     loginUser.email = "demo@example.com";
-                     hideModal(uiLoginModal);
-                     updateLoginStateUI();
-                     showToast("ログインしました。(Demo)", "success");
-                     resetGame(false);
-                } else {
-                     uiLoginError.innerText = "通信エラー";
-                     uiLoginError.classList.remove('hidden');
-                }
-            })
-            .finally(() => {
-                uiBtnSubmitLogin.disabled = false;
-                uiBtnSubmitLogin.innerText = "認証する";
-            });
-        }
-        
-        function handleResetSubmit() {
-            const email = uiResetEmail.value;
-            if(!email) return;
-            
-            uiResetMsg.classList.remove('hidden');
-            uiResetMsg.classList.remove('text-red-600');
-            uiResetMsg.classList.add('text-gray-600');
-            uiResetMsg.innerText = "送信中...";
-            
-            const payload = {
-                type: 'reset',
-                email: email
-            };
-            
-            fetch(API_ENDPOINT, {
-                method: 'POST',
-                redirect: 'follow', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === 'success') {
-                    uiResetMsg.innerText = "再設定メールを送信しました。";
-                } else {
-                    uiResetMsg.classList.add('text-red-600');
-                    uiResetMsg.innerText = "メールアドレスが見つかりませんでした。";
-                }
-            })
-            .catch(err => {
-                 uiResetMsg.classList.add('text-red-600');
-                 uiResetMsg.innerText = "送信エラーが発生しました。";
-            });
+            if(uiLoginId.value === VALID_ID && uiLoginPass.value === VALID_PASS) {
+                isLoggedIn = true;
+                hideModal(uiLoginModal);
+                updateLoginStateUI();
+                showToast("ログインしました。", "success");
+            } else {
+                uiLoginError.classList.remove('hidden');
+            }
         }
 
         function handleLogout() {
             if(confirm("ログアウトしますか？")) {
                 isLoggedIn = false;
                 updateLoginStateUI();
+                // Reset to free spread
                 currentSpread = 'one_oracle';
                 lastValidSpread = 'one_oracle';
                 uiSpreadSelect.value = 'one_oracle';
-                currentTopic = ""; 
-                resetGame(true);
+                resetGame();
             }
         }
 
         function updateLoginStateUI() {
             const btn = document.getElementById('btn-login-header');
-            const opts = uiSpreadSelect.options;
-
             if(isLoggedIn) {
                 btn.innerText = "ログアウト";
+                // Unlock dropdown visual
+                const opts = uiSpreadSelect.options;
                 for(let i=0; i<opts.length; i++) {
                     opts[i].text = opts[i].text.replace("🔒 ", "");
                 }
             } else {
                 btn.innerText = "ログイン";
-                 for(let i=0; i<opts.length; i++) {
-                    const val = opts[i].value;
-                    const conf = SPREAD_CONFIGS[val];
-                    if (conf && conf.loginReq && !opts[i].text.includes("🔒")) {
-                        opts[i].text = "🔒 " + opts[i].text;
-                    }
-                }
             }
         }
 
@@ -1166,20 +1034,24 @@
             }
         }
 
+        // --- Game Flow ---
+
         function startShuffle() {
             if(currentState !== 'IDLE' && currentState !== 'FINISHED') return;
             
+            // Check Topic Requirement for logged in users
             if(isLoggedIn && currentState === 'IDLE' && !currentTopic) {
-                if(uiTopicInput) uiTopicInput.value = "";
+                uiTopicInput.value = "";
                 showModal(uiTopicModal);
                 return;
             }
 
             currentState = 'SHUFFLING';
-            uiDeckStack.classList.add('shuffling'); 
+            uiDeckStack.classList.add('shuffling'); // Start CSS animation
             uiBtnShuffle.disabled = true;
             uiSpreadSelect.disabled = true;
             
+            // Reset board
             uiSpreadLayer.innerHTML = '';
             drawnCards = [];
             pickCount = 0;
@@ -1198,21 +1070,22 @@
             if (pickCount >= conf.count) return;
 
             currentState = 'PICKING';
-            uiDeckStack.classList.remove('shuffling');
+            uiDeckStack.classList.remove('shuffling'); // Stop shuffle momentarily
 
+            // Draw logic
             if(deck.length === 0) populateDeck();
             const rIndex = Math.floor(Math.random() * deck.length);
             const cardId = deck[rIndex];
             deck.splice(rIndex, 1);
             const isReversed = Math.random() < 0.5;
 
+            // Create Card Element
             const el = document.createElement('div');
             el.className = 'card-scene';
-            el.style.opacity = '1';
-            
             el.innerHTML = `
                 <div class="card-obj">
                     <div class="card-face front">
+                        <!-- Reverse logic: rotate image itself if reversed -->
                         <img src="${IMG_FOLDER}${cardId}${IMG_EXT}" 
                              style="transform: ${isReversed ? 'rotate(180deg)' : 'none'};"
                              onerror="this.src='https://placehold.co/100x174/eee/333?text=${cardId}'">
@@ -1225,28 +1098,32 @@
             uiSpreadLayer.appendChild(el);
             drawnCards.push({ id: cardId, reversed: isReversed, el: el });
 
-            // Animate
+            // Animate from Deck to Spread Position
             const deckRect = uiDeckStack.getBoundingClientRect();
             const spreadRect = uiSpreadLayer.getBoundingClientRect();
             
+            // Initial position (at deck)
             const startX = (spreadRect.width / 2) - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w'))/2); 
-            const startY = spreadRect.height - 150; 
+            const startY = spreadRect.height - 150; // Approx deck pos
 
             el.style.left = `${startX}px`;
             el.style.top = `${startY}px`;
-            el.style.opacity = '1';
 
+            // Target position
             const pos = conf.pos[pickCount];
             const targetX = (spreadRect.width * (pos.x / 100)) - (el.offsetWidth / 2);
             const targetY = (spreadRect.height * (pos.y / 100)) - (el.offsetHeight / 2);
 
+            // Reflow
             el.offsetHeight; 
 
+            // Fly
             requestAnimationFrame(() => {
                 el.style.transition = "all 0.5s ease-out";
                 el.style.left = `${targetX}px`;
                 el.style.top = `${targetY}px`;
                 
+                // Rotation for Cross spread
                 if(pos.cross) {
                     el.style.transform = "rotate(90deg)";
                 }
@@ -1254,15 +1131,15 @@
 
             pickCount++;
 
+            // Check if done
             if (pickCount >= conf.count) {
                 currentState = 'READY';
                 uiBtnOpen.disabled = false;
                 uiBtnOpen.style.opacity = 1;
-                // ★ Hide Deck when done
-                uiDeckStack.classList.add('hidden'); 
-                
+                uiDeckStack.classList.add('hidden'); // Hide deck when done
                 setStatus("カードが揃いました。「開く」を押してください。");
             } else {
+                // Resume shuffle visual if needed
                 setTimeout(() => {
                      if(currentState === 'PICKING') uiDeckStack.classList.add('shuffling');
                 }, 500);
@@ -1279,7 +1156,7 @@
             drawnCards.forEach((c) => {
                 setTimeout(() => {
                     const obj = c.el.querySelector('.card-obj');
-                    obj.classList.add('is-open');
+                    obj.classList.add('is-open'); // Flip horizontal
                 }, delay);
                 delay += 800;
             });
@@ -1292,7 +1169,7 @@
                 uiBtnShuffle.classList.add('hidden');
                 uiBtnOpen.classList.add('hidden');
                 
-                setStatus("リーディング完了。カードを動かして確認できます。");
+                setStatus("リーディング完了。");
 
                 if(isLoggedIn) {
                     sendDataToGAS();
@@ -1300,16 +1177,10 @@
             }, delay + 500);
         }
 
-        function resetGame(fullReset = false) {
-            // Logic for full reset (AGAIN button) vs soft reset (Spread change)
-            if (fullReset) {
-                currentTopic = ""; 
-                updateTopicUI();
-            }
-
-            // If logged in and topic missing, prompt
-            if(isLoggedIn && !currentTopic && fullReset) {
-                if(uiTopicInput) uiTopicInput.value = "";
+        function resetGame() {
+            // If logged in, ask topic again
+            if(isLoggedIn) {
+                uiTopicInput.value = "";
                 showModal(uiTopicModal);
             }
 
@@ -1317,8 +1188,6 @@
             drawnCards = [];
             currentState = 'IDLE';
             populateDeck();
-            
-            pickCount = 0; 
 
             uiBtnShuffle.disabled = false;
             uiBtnShuffle.classList.remove('hidden');
@@ -1337,59 +1206,12 @@
             uiDeckStack.classList.remove('shuffling');
             
             if(!isLoggedIn) setStatus("スプレッド（並べ方）を選んで開始してください。");
-            else if(!currentTopic) setStatus("テーマを設定して占いを開始します。");
-            else setStatus("シャッフルを開始してください。");
         }
-
-        // --- Drag Implementation ---
-        function handleDragStart(e) {
-            if (currentState !== 'FINISHED') return;
-            // Mouse left click only
-            if (e.type === 'mousedown' && e.button !== 0) return;
-
-            // Find valid card target
-            const targetEl = e.target.closest('.card-scene');
-            if (!targetEl) return;
-
-            const evt = e.type.includes('mouse') ? e : e.touches[0];
-
-            isDragging = true;
-            currentDragCard = targetEl;
-
-            currentDragCard.style.zIndex = 100;
-            currentDragCard.style.transition = 'none';
-
-            initialLeft = parseFloat(currentDragCard.style.left) || 0;
-            initialTop = parseFloat(currentDragCard.style.top) || 0;
-
-            startX = evt.clientX;
-            startY = evt.clientY;
-            
-            if (e.type === 'touchstart') {
-                e.preventDefault(); 
-            }
-        }
-
-        function handleDragMove(e) {
-            if (!isDragging || !currentDragCard) return;
-
-            const evt = e.type.includes('mouse') ? e : e.touches[0];
-            const dx = evt.clientX - startX;
-            const dy = evt.clientY - startY;
-
-            currentDragCard.style.left = `${initialLeft + dx}px`;
-            currentDragCard.style.top = `${initialTop + dy}px`;
-            
-            if(e.cancelable) e.preventDefault();
-        }
-
-        function handleDragEnd(e) {
-            if (!isDragging) return;
-            if(currentDragCard) {
-                currentDragCard.style.zIndex = 50;
-            }
-            isDragging = false;
-            currentDragCard = null;
+        
+        function setupImages() {
+            if(uiGuideImg) uiGuideImg.src = IMG_FOLDER + SEER_IMG;
+            if(uiHelperImg) uiHelperImg.src = IMG_FOLDER + HELPER_IMG;
+            uiDeckImgs.forEach(img => { if(img) img.src = IMG_FOLDER + BACK_IMG; });
         }
 
         // --- Utils ---
@@ -1412,7 +1234,14 @@
                 setTimeout(()=>t.remove(), 300);
             }, 3000);
         }
+        
+        function handleResetSubmit() {
+             // Placeholder for reset logic (handled by GAS in full version)
+             hideModal(uiResetModal);
+             showToast("送信しました(デモ)", "info");
+        }
 
+        // --- Native Share ---
         async function handleNativeShare() {
             const url = "https://tarot.design4qol.com/";
             const text = `🔮 今日の運命 (The Daily Oracle)\nTheme: ${currentTopic || 'My Destiny'}`;
@@ -1428,6 +1257,7 @@
                     // Share cancelled
                 }
             } else {
+                // Fallback
                 if(navigator.clipboard) {
                     navigator.clipboard.writeText(`${text} ${url}`);
                     showToast("リンクをクリップボードにコピーしました！");
@@ -1437,13 +1267,13 @@
             }
         }
 
+        // --- Backend ---
         function sendDataToGAS() {
             if(!API_ENDPOINT) return;
             
-            showToast("運営へ送信完了。解説をお待ちください。", "success");
+            showToast("結果を保存しています...", "info");
 
             const payload = {
-                type: 'save',
                 date: new Date().toISOString(),
                 theme: currentTopic,
                 spread: currentSpread,
@@ -1456,7 +1286,7 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                // Already toasted
+                showToast("Milioへ送信完了。解説をお待ちください。", "success");
             }).catch(e => {
                 console.error(e);
             });
@@ -1483,6 +1313,7 @@
             }
         }
 
+        // Run
         init();
 
     </script>
